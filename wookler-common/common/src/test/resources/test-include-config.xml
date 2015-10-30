@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<configuration>
+	<included>
+		<properties>
+			<name2>prop2</name2>
+			<name3>prop3</name3>
+		</properties>
+		<map name="DEMO">
+			<hash class="Test">
+				<replace>BB${name2}AA${name3}CC</replace>
+			</hash>
+		</map>
+	</included>
+</configuration>

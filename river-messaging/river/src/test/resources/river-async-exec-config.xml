@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<configuration>
+    <env>
+        <monitor>
+            <params>
+                <param name="app.name" value="TEST-RIVER" />
+                <param name="monitor.window.recycle" value="10ss" />
+                <param name="monitor.frequency.write" value="1mm" />
+            </params>
+            <counter class="com.wookler.server.common.counter.LogCounterLogger" />
+            <heartbeat class="com.wookler.server.common.counter.LogHeartbeatLogger" />
+        </monitor>
+        <task-manager name="TEST-RIVER-TM">
+            <params>
+                <param name="executor.pool.size" value="1" />
+            </params>
+        </task-manager>
+    </env>
+    <river>
+        <queue name="TEST-RIVER-ASYNC">
+            <params>
+                <param name="queue.lock.timeout" value="200" />
+                <param name="queue.message.converter" value="com.wookler.server.river.test.StringMessageConverter" />
+                <param name="ehcache.config" value="src/test/resources/test-ehcache.xml" />
+                <param name="queue.directory" value="/tmp/river/test" />
+                <param name="queue.onstart.reload" value="true" />
+                <param name="queue.recovery.threshold" value="100" />
+                <param name="queue.blocks.unused" value="20" />
+            </params>
+            <recycle class="com.wookler.server.river.SizeBasedRecycle">
+                <params>
+                    <param name="recycle.size" value="400000" />
+                </params>
+            </recycle>
+            <backup>
+                <params>
+                    <param name="backup.directory" value="/tmp/river/test/backup" />
+                    <param name="backup.retention" value="2hh" />
+                </params>
+            </backup>
+            <!-- <subscriber name="TEST-RIVER-ASYNC-SUBSCRIBER-0" class="com.wookler.server.river.MessageProcessor">
+                <params>
+                    <param name="subscriber.batch.size" value="4096" />
+                    <param name="subscriber.poll.timeout" value="300" />
+                    <param name="sleep.interval" value="100" />
+                    async ack is configured, but ack required is false. So this is essentially a no-op
+                    <param name="subscriber.ack.async" value="false" />
+                    <param name="subscriber.ack.required" value="true" />
+                    <param name="subscriber.ack.cache.size" value="64" />
+                    <param name="subscriber.ack.timeout" value="120000" />
+                </params>
+                <executor class="com.wookler.server.river.PooledExecutor" />
+                <params>
+                    <param name="executor.pool.size" value="1" />
+                </params>
+                <processor name="TEST-ASYNC-CONSUMER-0" class="com.wookler.server.river.test.AsyncConsumer">
+                    <params>
+                        <param name="directory.output" value="/tmp/river/test/pull" />
+                        <param name="processor.sleep" value="0" />
+                    </params>
+                </processor>
+            </subscriber> -->
+            <subscriber name="TEST-RIVER-ASYNC-SUBSCRIBER-1" class="com.wookler.server.river.MessageProcessor">
+                <params>
+                    <param name="subscriber.batch.size" value="4096" />
+                    <param name="subscriber.poll.timeout" value="300" />
+                    <param name="sleep.interval" value="100" />
+                    <!-- async ack is configured with ack required set to true -->
+                    <param name="subscriber.ack.async" value="true" />
+                    <param name="subscriber.ack.required" value="true" />
+                    <!-- TODO : with async acknowledgement, the acks will be lost if there is a huge backlog beyond the configured cache size. This will trigger multiple resends again and again. Thus the blocks will never be marked for gc. Figure out a way to fix this later. -->
+                    <param name="subscriber.ack.cache.size" value="200000" />
+                    <param name="subscriber.ack.timeout" value="120000" />
+                </params>
+                <executor class="com.wookler.server.river.PooledExecutor">
+                    <params>
+                        <param name="executor.pool.size" value="1" />
+                    </params>
+                </executor>
+                <processor name="TEST-EXEC-CONSUMER-1" class="com.wookler.server.river.test.Consumer">
+                    <params>
+                        <param name="queue.pull.name" value="TEST-RIVER-ASYNC-SUBSCRIBER-1" />
+                        <param name="directory.output" value="/tmp/river/test/pull" />
+                        <param name="processor.sleep" value="-1" />
+                    </params>
+                </processor>
+                <processor name="TEST-EXEC-CONSUMER-2" class="com.wookler.server.river.test.Consumer">
+                    <params>
+                        <param name="queue.pull.name" value="TEST-RIVER-ASYNC-SUBSCRIBER-1" />
+                        <param name="directory.output" value="/tmp/river/test/pull" />
+                        <param name="processor.sleep" value="-1" />
+                    </params>
+                </processor>
+                <!-- processor responsible for explicitly invoking the subscriber acks -->
+                <processor name="TEST-ASYNC-CONSUMER-1" class="com.wookler.server.river.test.AsyncConsumer">
+                    <params>
+                        <param name="directory.output" value="/tmp/river/test/pull" />
+                        <param name="processor.sleep" value="-1" />
+                    </params>
+                </processor>
+            </subscriber>
+        </queue>
+    </river>
+    <test>
+        <producer name="TEST-PRODUCER-0">
+            <params>
+                <param name="file.input" value="src/test/resources/input2" />
+                <param name="file.cycle" value="4" />
+            </params>
+        </producer>
+        <producer name="TEST-PRODUCER-1">
+            <params>
+                <param name="file.input" value="src/test/resources/input2" />
+                <param name="file.cycle" value="4" />
+            </params>
+        </producer>
+        <producer name="TEST-PRODUCER-2">
+            <params>
+                <param name="file.input" value="src/test/resources/input2" />
+                <param name="file.cycle" value="4" />
+            </params>
+        </producer>
+        <producer name="TEST-PRODUCER-3">
+            <params>
+                <param name="file.input" value="src/test/resources/input2" />
+                <param name="file.cycle" value="4" />
+            </params>
+        </producer>
+    </test>
+</configuration>

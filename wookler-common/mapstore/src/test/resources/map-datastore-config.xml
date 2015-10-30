@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<wookler>
+		<test>
+			<map-data-store name="testDS">
+				<partitions partitions.min="4" partitions.max="10">
+					<params>
+						<param name="directory.base" value="/tmp/wookler/test/mapDS" />
+						<param name="partition.fill.pct" value="70" />
+						<param name="size.partition.max" value="500000" />
+						<param name="size.key.avg" value="64" />
+						<param name="size.value.avg" value="4096" />
+					</params>
+				</partitions>
+				<params>
+					<params name="serializer.key"
+						value="com.wookler.server.common.model.SerializerRegistry.UTF8StringSerializer" />
+					<params name="serializer.key"
+						value="com.wookler.server.common.model.SerializerRegistry.ByteSerializer" />
+				</params>
+			</map-data-store>
+		</test>
+	</wookler>
+</configuration>

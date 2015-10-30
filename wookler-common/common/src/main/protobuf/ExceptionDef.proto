@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+option java_package = "com.wookler.server.common.model";
+option java_outer_classname = "ExceptionDef";
+message StackTraceElementProto {
+	required string file = 1;
+	required string classname = 2;
+	required string method = 3;
+	required uint32 line = 4;
+	required bool isNativeMethod = 5 [default = false];
+}
+
+message ExceptionProto {
+	required uint32 errorCode = 1;
+	required string mesg = 3;
+	repeated StackTraceElementProto stacktrace = 4;
+	optional ExceptionProto cause = 5;
+}
+
+message ErrorProto {
+	required ExceptionProto exception = 1;
+	required string componentId = 2;
+}

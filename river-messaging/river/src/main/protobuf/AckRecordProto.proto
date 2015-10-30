@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package com.wookler.server.river;
+
+option java_package = "com.wookler.server.river";
+option java_outer_classname = "AckRecordProto";
+message AckRecord {
+	required string messageId = 1;
+	required string blockId = 2;
+	required uint64 blockIndex = 3;
+	required uint64 sendTimestamp = 4;
+	required bool acked = 5;
+}

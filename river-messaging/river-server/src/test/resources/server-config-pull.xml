@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+
+<!--
+  ~ Copyright [2014] Subhabrata Ghosh
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<configuration>
+    <!-- Execution Environment configuration -->
+    <env>
+        <monitor>
+            <params>
+                <!-- Application name [require]-->
+                <param name="app.name" value="TEST-IPQ"/>
+                <!-- Application Counter recycle window [required] -->
+                <param name="monitor.window.recycle" value="30ss"/>
+                <!-- Counter logging frequency -->
+                <param name="monitor.frequency.write" value="1mm"/>
+            </params>
+            <!-- Implementation class for logging application counters -->
+            <counter class="com.wookler.ipq.examples.utils.LogCounterLogger"/>
+            <!-- Implementation class for logging thread heartbeats -->
+            <heartbeat class="com.wookler.ipq.examples.utils.LogHeartbeatLogger"/>
+        </monitor>
+        <!-- Background managed task manager -->
+        <task-manager name="TEST-IPQ-TM">
+            <params>
+                <!-- Managed task execution pool size.-->
+                <param name="executor.pool.size" value="1"/>
+            </params>
+        </task-manager>
+    </env>
+    <server>
+        <params>
+            <param name="server.queue.port" value="8080"/>
+            <param name="server.queue.ssl.port" value="8443"/>
+            <param name="server.queue.server.threads" value="6"/>
+        </params>
+    </server>
+    <queue name="TEST-IPQ-EXEC" class="com.wookler.ipq.examples.queues.StringMessageQueue">
+        <params>
+            <param name="queue.lock.timeout" value="100"/>
+            <param name="queue.message.converter" value="com.wookler.ipq.examples.utils.StringMessageConverter"/>
+            <param name="ehcache.config" value="/work/dev/IPQ/examples/src/main/resources/example-ehcache.xml"/>
+            <param name="queue.directory" value="/tmp/ipq/test"/>
+            <param name="queue.onstart.reload" value="false"/>
+        </params>
+        <recycle class="com.wookler.ipq.core.SizeBasedRecycle">
+            <params>
+                <param name="recycle.size" value="1000000"/>
+            </params>
+        </recycle>
+        <backup>
+            <params>
+                <param name="backup.directory" value="/tmp/ipq/test/backup"/>
+                <param name="backup.retention" value="10mm"/>
+            </params>
+        </backup>
+        <subscriber name="TEST-IPQ-EXEC-SUBSCRIBER-0" class="com.wookler.ipq.core.MessageProcessor">
+            <params>
+                <param name="subscriber.batch.size" value="1024"/>
+                <param name="subscriber.poll.timeout" value="100"/>
+                <param name="sleep.interval" value="100"/>
+                <param name="subscriber.concurrent" value="true"/>
+                <param name="subscriber.ack.required" value="true"/>
+                <param name="subscriber.ack.cache.size" value="64"/>
+                <param name="subscriber.ack.timeout" value="60000"/>
+            </params>
+            <executor class="com.wookler.ipq.core.PooledExecutor">
+                <params>
+                    <param name="executor.pool.size" value="3"/>
+                </params>
+            </executor>
+            <processor name="TEST-EXEC-CONSUMER-1" class="com.wookler.ipq.examples.handlers.LocalConsumer">
+                <params>
+                    <param name="queue.pull.name" value="TEST-IPQ-EXEC-SUBSCRIBER-0"/>
+                    <param name="directory.output" value="/tmp/ipq/test/pull"/>
+                    <param name="processor.sleep" value="-1"/>
+                </params>
+            </processor>
+            <processor name="TEST-EXEC-CONSUMER-2" class="com.wookler.ipq.examples.handlers.LocalConsumer">
+                <params>
+                    <param name="queue.pull.name" value="TEST-IPQ-EXEC-SUBSCRIBER-0"/>
+                    <param name="directory.output" value="/tmp/ipq/test/pull"/>
+                    <param name="processor.sleep" value="-1"/>
+                </params>
+            </processor>
+            <processor name="TEST-EXEC-CONSUMER-3" class="com.wookler.ipq.examples.handlers.LocalConsumer">
+                <params>
+                    <param name="queue.pull.name" value="TEST-IPQ-EXEC-SUBSCRIBER-0"/>
+                    <param name="directory.output" value="/tmp/ipq/test/pull"/>
+                    <param name="processor.sleep" value="-1"/>
+                </params>
+            </processor>
+        </subscriber>
+    </queue>
+    <services>
+        <publisher class="com.wookler.ipq.examples.writer.SampleJsonWriterService"
+                   package="com.wookler.ipq.examples.writer" name="TEST-PUBLISHER">
+            <params>
+                <param name="service.protocol" value="com.wookler.ipq.examples.StringJsonProtocolHandler"/>
+            </params>
+        </publisher>
+        <subscriber class="com.wookler.ipq.examples.reader.SampleJsonReaderService"
+                    package="com.wookler.ipq.examples.reader" name="TEST-SUBSCRIBER">
+            <params>
+                <param name="service.protocol" value="com.wookler.ipq.examples.StringJsonProtocolHandler"/>
+                <param name="service.queue.timeout" value="200"/>
+                <param name="service.queue.batch.size" value="4096"/>
+            </params>
+        </subscriber>
+    </services>
+</configuration>

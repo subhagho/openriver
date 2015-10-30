@@ -1,0 +1,69 @@
+syntax = "proto2";
+
+package com.wookler.core.model;
+
+option java_package = "com.wookler.server.common.model";
+option java_outer_classname = "SecurityDataModelProto";
+enum ESecurityZone {
+	ZONE_1 = 0;
+	ZONE_2 = 1;
+	ZONE_3 = 2;
+	ZONE_4 = 3;
+}
+
+enum EOperationType {
+	READ = 0;
+	WRITE = 1;
+	EXEC = 2;
+}
+
+enum ESecurityKeyTypeProto {
+	BasicCryptoKey = 0;
+	RSATokenPublic = 1;
+	RSATokenPrivate = 2;
+	UserPassword = 3;
+	DBUserPassword = 4;
+}
+
+message KeyHeaderProto {
+	required uint64 version = 1;
+	required string id = 2;
+	required uint64 createTime = 3;
+	required uint64 validUntil = 4;
+	required ESecurityKeyTypeProto type = 5;
+}
+
+message BasicCryptoKeyProto {
+	required KeyHeaderProto header = 1;
+	required bytes key = 2;
+}
+
+message RSATokenProto {
+	required KeyHeaderProto header = 1;
+	required bytes key = 2;
+}
+
+message UserPasswordProto {
+	required KeyHeaderProto header = 1;
+	required string username = 2;
+	required string password = 3;
+}
+
+message DBUserPasswordProto {
+	required KeyHeaderProto header = 1;
+	required string username = 2;
+	required string password = 3;
+	required string adminPassword = 4;
+}
+
+message SecurityDataRecord {
+	required string type = 1;
+	required uint32 size = 2;
+	required bytes data = 3;
+}
+
+message SecurityData {
+	required uint64 timestamp = 1;
+	required uint32 count = 2;
+	repeated SecurityDataRecord records = 3;
+}

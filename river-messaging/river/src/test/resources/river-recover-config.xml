@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright [2014] Subhabrata Ghosh
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<configuration>
+    <env>
+        <monitor>
+            <params>
+                <param name="app.name" value="TEST-RIVER"/>
+                <param name="monitor.window.recycle" value="30ss"/>
+                <param name="monitor.frequency.write" value="1mm"/>
+            </params>
+            <counter class="com.wookler.server.common.counter.LogCounterLogger" />
+            <heartbeat class="com.wookler.server.common.counter.LogHeartbeatLogger" />
+        </monitor>
+        <task-manager name="TEST-RIVER-TM">
+            <params>
+                <param name="executor.pool.size" value="1"/>
+            </params>
+        </task-manager>
+    </env>
+    <river>
+        <queue name="TEST-RIVER-RECOVER-EXEC">
+            <params>
+                <param name="queue.lock.timeout" value="100"/>
+                <param name="queue.message.converter" value="com.wookler.server.river.test.StringMessageConverter"/>
+                <param name="ehcache.config" value="src/test/resources/test-ehcache.xml"/>
+                <param name="queue.directory" value="/tmp/river/test"/>
+                <param name="queue.onstart.reload" value="true"/>
+                <param name="queue.recovery.threshold" value="2" />
+            </params>
+            <recycle class="com.wookler.server.river.SizeBasedRecycle">
+                <params>
+                    <param name="recycle.size" value="500000"/>
+                </params>
+            </recycle>
+            <backup>
+                <params>
+                    <param name="backup.directory" value="/tmp/river/test/backup"/>
+                    <param name="backup.retention" value="10mm"/>
+                </params>
+            </backup>
+             <subscriber name="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-0" class="com.wookler.server.river.MessagePullSubscriber">
+                <params>
+                    <param name="subscriber.batch.size" value="1024"/>
+                    <param name="subscriber.poll.timeout" value="100"/>
+                    <param name="sleep.interval" value="100"/>
+                    <param name="subscriber.ack.required" value="false"/>
+                </params>
+            </subscriber>
+            <subscriber name="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1" class="com.wookler.server.river.MessagePullSubscriber">
+                <params>
+                    <param name="subscriber.batch.size" value="1024"/>
+                    <param name="subscriber.poll.timeout" value="100"/>
+                    <param name="sleep.interval" value="100"/>
+                    <param name="subscriber.ack.required" value="true"/>
+                    <param name="subscriber.ack.cache.size" value="64"/>
+                    <param name="subscriber.ack.timeout" value="60000"/>
+                </params>
+            </subscriber>
+        </queue>
+    </river>
+    <test>
+        <producer name="TEST-PRODUCER-0">
+            <params>
+                <param name="file.input"
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="2"/>
+            </params>
+        </producer>
+        <producer name="TEST-PRODUCER-1">
+            <params>
+                <param name="file.input"
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="2"/>
+            </params>
+        </producer>
+        <producer name="TEST-PRODUCER-2">
+            <params>
+                <param name="file.input"
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="2"/>
+            </params>
+        </producer>
+        <producer name="TEST-PRODUCER-3">
+            <params>
+                <param name="file.input"
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="2"/>
+            </params>
+        </producer>
+         <consumer name="TEST-CONSUMER-0">
+            <params>
+                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-0"/>
+                <param name="directory.output" value="/tmp/river/test/pull"/>
+                <param name="processor.sleep" value="-1"/>
+            </params>
+        </consumer>
+        <consumer name="TEST-CONSUMER-1">
+            <params>
+                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
+                <param name="directory.output" value="/tmp/river/test/pull"/>
+                <param name="processor.sleep" value="-1"/>
+            </params>
+        </consumer>
+        <consumer name="TEST-CONSUMER-2">
+            <params>
+                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
+                <param name="directory.output" value="/tmp/river/test/pull"/>
+                <param name="processor.sleep" value="-1"/>
+            </params>
+        </consumer>
+        <consumer name="TEST-CONSUMER-3">
+            <params>
+                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
+                <param name="directory.output" value="/tmp/river/test/pull"/>
+                <param name="processor.sleep" value="-1"/>
+            </params>
+        </consumer>
+    </test>
+</configuration>

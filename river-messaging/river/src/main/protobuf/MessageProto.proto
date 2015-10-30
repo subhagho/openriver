@@ -1,0 +1,16 @@
+package com.wookler.server.river;
+
+
+option java_package = "com.wookler.server.river";
+
+option java_outer_classname = "MessageBuf";
+
+message HeaderProto {
+    required string id = 1;
+    required uint64 timestamp = 2;
+}
+
+message MessageProto {
+    required HeaderProto header = 1;
+    required bytes data = 2;
+}

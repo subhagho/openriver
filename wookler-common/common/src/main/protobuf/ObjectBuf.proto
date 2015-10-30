@@ -1,0 +1,18 @@
+package com.wookler.server.common;
+
+
+option java_package = "com.wookler.server.common";
+
+option java_outer_classname = "ObjectBuf";
+
+message ObjectProto {
+    required string type = 1;
+    required uint32 size = 2;
+    required bytes data = 3;
+}
+
+message ObjectArrayProto {
+    required uint32 count = 1;
+    required string type = 2;
+    required bytes data = 3;
+}

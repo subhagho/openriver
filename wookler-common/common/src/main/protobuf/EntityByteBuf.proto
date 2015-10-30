@@ -1,0 +1,12 @@
+package com.wookler.server.common;
+
+
+option java_package = "com.wookler.server.common.model";
+
+option java_outer_classname = "EntityByteBuf";
+
+message EntityByteProto {
+    required bytes id = 1;
+    required bytes data = 2;
+}
+

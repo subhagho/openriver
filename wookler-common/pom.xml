@@ -9,7 +9,7 @@
 	<packaging>pom</packaging>
 
 	<name>wookler-common</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/subhagho/openriver</url>
 
 	<!-- TODO: add scm tags -->
 
@@ -17,6 +17,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<chronicle-map.version>2.1.4</chronicle-map.version>
 		<wookler.common.version>1.0-SNAPSHOT</wookler.common.version>
+		<github.global.server>github</github.global.server>
 	</properties>
 
 	<modules>
@@ -78,8 +79,8 @@
 								<goal>jar</goal>
 							</goals>
 							<configuration>
-                				<additionalparam>-Xdoclint:none</additionalparam>
-            				</configuration>
+								<additionalparam>-Xdoclint:none</additionalparam>
+							</configuration>
 						</execution>
 					</executions>
 				</plugin>
@@ -101,6 +102,24 @@
 				<configuration>
 					<argLine>-Xms128m -Xmx3072m</argLine>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.github.github</groupId>
+				<artifactId>site-maven-plugin</artifactId>
+				<version>0.12</version>
+				<configuration>
+					<message>Creating site for ${project.version}</message>
+					<repositoryName>wookler-common</repositoryName>
+					<repositoryOwner>subhagho</repositoryOwner>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>site</goal>
+						</goals>
+						<phase>site</phase>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

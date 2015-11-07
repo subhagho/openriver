@@ -113,29 +113,29 @@
         <producer name="TEST-PRODUCER-0">
             <params>
                 <param name="file.input"
-                       value="/tmp/input2"/>
-                <param name="file.cycle" value="10"/>
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="25"/>
             </params>
         </producer>
         <producer name="TEST-PRODUCER-1">
             <params>
                 <param name="file.input"
-                       value="/tmp/input2"/>
-                <param name="file.cycle" value="10"/>
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="25"/>
             </params>
         </producer>
         <producer name="TEST-PRODUCER-2">
             <params>
                 <param name="file.input"
-                       value="/tmp/input2"/>
-                <param name="file.cycle" value="10"/>
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="25"/>
             </params>
         </producer>
         <producer name="TEST-PRODUCER-3">
             <params>
                 <param name="file.input"
-                       value="/tmp/input2"/>
-                <param name="file.cycle" value="10"/>
+                       value="src/test/resources/input2"/>
+                <param name="file.cycle" value="25"/>
             </params>
         </producer>
     </test>

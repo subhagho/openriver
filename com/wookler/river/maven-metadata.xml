@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
   <groupId>com.wookler</groupId>
-  <artifactId>river-messaging</artifactId>
+  <artifactId>river</artifactId>
   <versioning>
     <versions>
       <version>1.0-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20151109103513</lastUpdated>
+    <lastUpdated>20151109103525</lastUpdated>
   </versioning>
 </metadata>

@@ -6,10 +6,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>river-remote</artifactId>
+    <artifactId>river-client</artifactId>
     <packaging>jar</packaging>
 
-    <name>river-remote</name>
+    <name>river-client</name>
     <url>http://maven.apache.org</url>
 
     <dependencies>
@@ -27,10 +27,21 @@
         </dependency>
         <dependency>
             <groupId>com.wookler</groupId>
-            <artifactId>river</artifactId>
+            <artifactId>river-remote</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-bundle</artifactId>
+            <version>1.17.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.0.26.Final</version>
+        </dependency>
 
         <!-- Jackson Json Dependencies -->
         <dependency>

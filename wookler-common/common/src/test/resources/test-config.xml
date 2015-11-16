@@ -1,17 +1,18 @@
 <?xml version="1.0"?>
 <configuration>
-	<ipq>
+	<river>
 		<properties>
 			<name>prop1</name>
 			<name1>prop2</name1>
 		</properties>
-		<queue name="DEMO">
-			<subscriber class="Test">
-				<replace>BB${name}AA${name1}CC${PROP}</replace>
-			</subscriber>
-		</queue>
-		<include
-			file="src/test/resources/test-include-config.xml"
-			root="/configuration/included" />
-	</ipq>
+		<type>
+			<queue name="DEMO">
+				<subscriber class="Test">
+					<replace>BB${name}AA${name1}CC${PROP}</replace>
+				</subscriber>
+			</queue>
+			<include file="src/test/resources/test-include-config.xml"
+				root="/configuration/included" />
+		</type>
+	</river>
 </configuration>

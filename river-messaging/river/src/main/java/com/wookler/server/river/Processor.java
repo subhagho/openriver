@@ -48,7 +48,7 @@ public abstract class Processor<M> implements Configurable {
 
 		public static final String CONFIG_PARAM_IGNORE_EXCEPTION = "ignore.exception";
 
-		public static final String MONITOR_NAMESPACE = "ipq.counters.processor";
+		public static final String MONITOR_NAMESPACE = "river.counters.processor";
 
 		public static final String MONITOR_COUNTER_MESSAGES = "messages";
 		public static final String MONITOR_COUNTER_SUCCESS = "success";

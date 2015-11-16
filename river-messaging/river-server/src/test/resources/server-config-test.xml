@@ -18,14 +18,14 @@
     <env>
         <monitor>
             <params>
-                <param name="app.name" value="TEST-IPQ-SEVER"/>
+                <param name="app.name" value="TEST-RIVER-SEVER"/>
                 <param name="monitor.window.recycle" value="30ss"/>
                 <param name="monitor.frequency.write" value="1mm"/>
             </params>
-            <counter class="com.wookler.ipq.core.impl.LogCounterLogger"/>
-            <heartbeat class="com.wookler.ipq.core.impl.LogHeartbeatLogger"/>
+            <counter class="com.wookler.river.core.impl.LogCounterLogger"/>
+            <heartbeat class="com.wookler.river.core.impl.LogHeartbeatLogger"/>
         </monitor>
-        <task-manager name="TEST-IPQ-TM">
+        <task-manager name="TEST-RIVER-TM">
             <params>
                 <param name="executor.pool.size" value="1"/>
             </params>
@@ -42,42 +42,42 @@
             <param name="server.queue.reader.threads" value="4"/>
             <param name="server.queue.writer.threads" value="2"/>
         </params>
-        <queue name="TEST-IPQ-EXEC">
+        <queue name="TEST-RIVER-EXEC">
             <params>
                 <param name="queue.lock.timeout" value="100"/>
-                <param name="queue.message.converter" value="com.wookler.ipq.core.impl.StringMessageConverter"/>
+                <param name="queue.message.converter" value="com.wookler.river.core.impl.StringMessageConverter"/>
                 <param name="ehcache.config" value="core/src/test/resources/test-ehcache.xml"/>
-                <param name="queue.directory" value="/tmp/ipq/test"/>
+                <param name="queue.directory" value="/tmp/river/test"/>
                 <param name="queue.onstart.reload" value="false"/>
             </params>
-            <recycle class="com.wookler.ipq.core.SizeBasedRecycle">
+            <recycle class="com.wookler.river.core.SizeBasedRecycle">
                 <params>
                     <param name="recycle.size" value="1000000"/>
                 </params>
             </recycle>
             <backup>
                 <params>
-                    <param name="backup.directory" value="/tmp/ipq/test/backup"/>
+                    <param name="backup.directory" value="/tmp/river/test/backup"/>
                     <param name="backup.retention" value="10mm"/>
                 </params>
             </backup>
-            <subscriber name="TEST-IPQ-EXEC-SUBSCRIBER-0" class="com.wookler.ipq.core.MessageProcessor">
+            <subscriber name="TEST-RIVER-EXEC-SUBSCRIBER-0" class="com.wookler.river.core.MessageProcessor">
                 <params>
                     <param name="subscriber.batch.size" value="1024"/>
                     <param name="subscriber.poll.timeout" value="100"/>
                     <param name="sleep.interval" value="100"/>
                     <param name="subscriber.ack.required" value="false"/>
                 </params>
-                <executor class="com.wookler.ipq.core.InlineExecutor"/>
-                <processor name="TEST-EXEC-CONSUMER-0" class="com.wookler.ipq.core.test.Consumer">
+                <executor class="com.wookler.river.core.InlineExecutor"/>
+                <processor name="TEST-EXEC-CONSUMER-0" class="com.wookler.river.core.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-IPQ-EXEC-SUBSCRIBER-0"/>
-                        <param name="directory.output" value="/tmp/ipq/test/pull"/>
+                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-0"/>
+                        <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="0"/>
                     </params>
                 </processor>
             </subscriber>
-            <subscriber name="TEST-IPQ-EXEC-SUBSCRIBER-1" class="com.wookler.ipq.core.MessageProcessor">
+            <subscriber name="TEST-RIVER-EXEC-SUBSCRIBER-1" class="com.wookler.river.core.MessageProcessor">
                 <params>
                     <param name="subscriber.batch.size" value="1024"/>
                     <param name="subscriber.poll.timeout" value="100"/>
@@ -86,54 +86,54 @@
                     <param name="subscriber.ack.cache.size" value="64"/>
                     <param name="subscriber.ack.timeout" value="60000"/>
                 </params>
-                <executor class="com.wookler.ipq.core.PooledExecutor">
+                <executor class="com.wookler.river.core.PooledExecutor">
                     <params>
                         <param name="executor.pool.size" value="3"/>
                     </params>
                 </executor>
-                <processor name="TEST-EXEC-CONSUMER-1" class="com.wookler.ipq.examples.handlers.LocalConsumer">
+                <processor name="TEST-EXEC-CONSUMER-1" class="com.wookler.river.examples.handlers.LocalConsumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-IPQ-EXEC-SUBSCRIBER-0"/>
-                        <param name="directory.output" value="/tmp/ipq/test/pull"/>
+                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-0"/>
+                        <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>
-                <processor name="TEST-EXEC-CONSUMER-2" class="com.wookler.ipq.examples.handlers.LocalConsumer">
+                <processor name="TEST-EXEC-CONSUMER-2" class="com.wookler.river.examples.handlers.LocalConsumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-IPQ-EXEC-SUBSCRIBER-0"/>
-                        <param name="directory.output" value="/tmp/ipq/test/pull"/>
+                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-0"/>
+                        <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>
-                <processor name="TEST-EXEC-CONSUMER-3" class="com.wookler.ipq.examples.handlers.LocalConsumer">
+                <processor name="TEST-EXEC-CONSUMER-3" class="com.wookler.river.examples.handlers.LocalConsumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-IPQ-EXEC-SUBSCRIBER-0"/>
-                        <param name="directory.output" value="/tmp/ipq/test/pull"/>
+                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-0"/>
+                        <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>
             </subscriber>
         </queue>
-        <queue name="TEST-IPQ-PULL">
+        <queue name="TEST-RIVER-PULL">
             <params>
                 <param name="queue.lock.timeout" value="100"/>
-                <param name="queue.message.converter" value="com.wookler.ipq.core.impl.StringMessageConverter"/>
+                <param name="queue.message.converter" value="com.wookler.river.core.impl.StringMessageConverter"/>
                 <param name="ehcache.config" value="core/src/test/resources/test-ehcache.xml"/>
-                <param name="queue.directory" value="/tmp/ipq/test"/>
+                <param name="queue.directory" value="/tmp/river/test"/>
                 <param name="queue.onstart.reload" value="false"/>
             </params>
-            <recycle class="com.wookler.ipq.core.SizeBasedRecycle">
+            <recycle class="com.wookler.river.core.SizeBasedRecycle">
                 <params>
                     <param name="recycle.size" value="1000000"/>
                 </params>
             </recycle>
             <backup>
                 <params>
-                    <param name="backup.directory" value="/tmp/ipq/test/backup"/>
+                    <param name="backup.directory" value="/tmp/river/test/backup"/>
                     <param name="backup.retention" value="10mm"/>
                 </params>
             </backup>
-            <subscriber name="TEST-IPQ-PULL-SUBSCRIBER-0" class="com.wookler.ipq.core.MessagePullSubscriber">
+            <subscriber name="TEST-RIVER-PULL-SUBSCRIBER-0" class="com.wookler.river.core.MessagePullSubscriber">
                 <params>
                     <param name="subscriber.batch.size" value="1024"/>
                     <param name="subscriber.poll.timeout" value="100"/>
@@ -142,7 +142,7 @@
                     <param name="subscriber.ack.required" value="false"/>
                 </params>
             </subscriber>
-            <subscriber name="TEST-IPQ-PULL-SUBSCRIBER-1" class="com.wookler.ipq.core.MessagePullSubscriber">
+            <subscriber name="TEST-RIVER-PULL-SUBSCRIBER-1" class="com.wookler.river.core.MessagePullSubscriber">
                 <params>
                     <param name="subscriber.batch.size" value="1024"/>
                     <param name="subscriber.poll.timeout" value="100"/>
@@ -155,16 +155,16 @@
             </subscriber>
         </queue>
         <services>
-            <publisher class="com.wookler.ipq.server.services.writer.TestJsonWriterService"
-                       package="com.wookler.ipq.server.services.writer">
+            <publisher class="com.wookler.river.server.services.writer.TestJsonWriterService"
+                       package="com.wookler.river.server.services.writer">
                 <params>
-                    <param name="service.protocol" value="com.wookler.ipq.server.services.TestJsonProtocolHandler"/>
+                    <param name="service.protocol" value="com.wookler.river.server.services.TestJsonProtocolHandler"/>
                 </params>
             </publisher>
-            <subscriber class="com.wookler.ipq.server.services.reader.TestJsonReaderService"
-                        package="com.wookler.ipq.server.services.reader">
+            <subscriber class="com.wookler.river.server.services.reader.TestJsonReaderService"
+                        package="com.wookler.river.server.services.reader">
                 <params>
-                    <param name="service.protocol" value="com.wookler.ipq.server.services.TestJsonProtocolHandler"/>
+                    <param name="service.protocol" value="com.wookler.river.server.services.TestJsonProtocolHandler"/>
                     <param name="service.queue.timeout" value="10000"/>
                     <param name="service.queue.batch.size" value="4096"/>
                 </params>

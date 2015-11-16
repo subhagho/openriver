@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<configuration>
+	<river>
+		<test>
+			<auto class="com.wookler.server.common.config.TestAuto"
+				autoload="false">
+				<params>
+					<param name="enum" value="TEST2" />
+					<param name="double" value="99824.2344" />
+				</params>
+			</auto>
+		</test>
+	</river>
+</configuration>

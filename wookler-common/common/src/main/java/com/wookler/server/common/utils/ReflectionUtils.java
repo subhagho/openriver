@@ -1,31 +1,28 @@
 /*
- *
- *  Copyright 2014 Subhabrata Ghosh
- *  
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *  http://www.apache.org/licenses/LICENSE-2.0
- *  
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Copyright 2014 Subhabrata Ghosh
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.wookler.server.common.utils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
 import com.google.common.base.Preconditions;
+import com.wookler.server.common.ConfigurationException;
 
 /**
  * Publisher handle to the Message Queue.
@@ -74,12 +71,21 @@ public class ReflectionUtils {
 
 	public static Object getFieldValue(Object o, Field field) throws Exception {
 		String method = "get" + StringUtils.capitalize(field.getName());
+
 		Method m = MethodUtils.getAccessibleMethod(o.getClass(), method);
 		if (m == null) {
 			method = field.getName();
 			m = MethodUtils.getAccessibleMethod(o.getClass(), method);
 		}
 
+		if (m == null) {
+			Class<?> type = field.getType();
+			if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+				method = "is" + StringUtils.capitalize(field.getName());
+				m = MethodUtils.getAccessibleMethod(o.getClass(), method);
+			}
+		}
+		
 		if (m == null)
 			throw new Exception("No accessable method found for field. [field="
 					+ field.getName() + "][class="
@@ -91,10 +97,133 @@ public class ReflectionUtils {
 		Preconditions.checkArgument(field != null);
 		if (field.isEnumConstant() || field.getType().isEnum())
 			return true;
-		if (field.getType().isPrimitive())
+		if (isPrimitiveTypeOrClass(field))
 			return true;
 		if (field.getType().equals(String.class))
 			return true;
+		if (field.getType().equals(Date.class))
+			return true;
+		return false;
+	}
+
+	public static final void setPrimitiveValue(String value, Object source,
+			Field f) throws Exception {
+		Class<?> type = f.getType();
+		if (type.equals(boolean.class) || type.equals(Boolean.class)) {
+			setBooleanValue(source, f, value);
+		} else if (type.equals(short.class) || type.equals(Short.class)) {
+			setShortValue(source, f, value);
+		} else if (type.equals(int.class) || type.equals(Integer.class)) {
+			setIntValue(source, f, value);
+		} else if (type.equals(float.class) || type.equals(Float.class)) {
+			setFloatValue(source, f, value);
+		} else if (type.equals(double.class) || type.equals(Double.class)) {
+			setDoubleValue(source, f, value);
+		} else if (type.equals(long.class) || type.equals(Long.class)) {
+			setLongValue(source, f, value);
+		} else if (type.equals(char.class) || type.equals(Character.class)) {
+			setCharValue(source, f, value);
+		}
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static final void setValueFromString(String value, Object source,
+			Field f) throws ConfigurationException {
+		try {
+			Class<?> type = f.getType();
+			if (ReflectionUtils.isPrimitiveTypeOrClass(f)) {
+				ReflectionUtils.setPrimitiveValue(value, source, f);
+			} else if (type.equals(String.class)) {
+				ReflectionUtils.setStringValue(source, f, value);
+			} else if (type.isEnum()) {
+				Class<Enum> et = (Class<Enum>) type;
+				Object ev = Enum.valueOf(et, value);
+				ReflectionUtils.setObjectValue(source, f, ev);
+			}
+		} catch (Exception e) {
+			throw new ConfigurationException(
+					"Error setting object value : [type="
+							+ source.getClass().getCanonicalName() + "][field="
+							+ f.getName() + "]",
+					e);
+		}
+	}
+
+	public static void setObjectValue(Object o, Field f, Object value)
+			throws Exception {
+		String method = "set" + StringUtils.capitalize(f.getName());
+		Method m = MethodUtils.getAccessibleMethod(o.getClass(), method,
+				f.getType());
+		if (m == null) {
+			method = f.getName();
+			m = MethodUtils.getAccessibleMethod(o.getClass(), method,
+					f.getType());
+		}
+
+		if (m == null)
+			throw new Exception("No accessable method found for field. [field="
+					+ f.getName() + "][class=" + o.getClass().getCanonicalName()
+					+ "]");
+		MethodUtils.invokeMethod(o, method, value);
+	}
+
+	public static void setStringValue(Object o, Field f, String value)
+			throws Exception {
+		setObjectValue(o, f, value);
+	}
+
+	public static void setBooleanValue(Object o, Field f, String value)
+			throws Exception {
+		boolean bv = Boolean.valueOf(value);
+		setObjectValue(o, f, bv);
+	}
+
+	public static void setShortValue(Object o, Field f, String value)
+			throws Exception {
+		short sv = Short.parseShort(value);
+		setObjectValue(o, f, sv);
+	}
+
+	public static void setIntValue(Object o, Field f, String value)
+			throws Exception {
+		int iv = Integer.parseInt(value);
+		setObjectValue(o, f, iv);
+	}
+
+	public static void setLongValue(Object o, Field f, String value)
+			throws Exception {
+		long lv = Long.parseLong(value);
+		setObjectValue(o, f, lv);
+	}
+
+	public static void setFloatValue(Object o, Field f, String value)
+			throws Exception {
+		float fv = Float.parseFloat(value);
+		setObjectValue(o, f, fv);
+	}
+
+	public static void setDoubleValue(Object o, Field f, String value)
+			throws Exception {
+		double dv = Double.parseDouble(value);
+		setObjectValue(o, f, dv);
+	}
+
+	public static void setCharValue(Object o, Field f, String value)
+			throws Exception {
+		char cv = value.charAt(0);
+		setObjectValue(o, f, cv);
+	}
+
+	public static final boolean isPrimitiveTypeOrClass(Field field) {
+		Class<?> type = field.getType();
+		if (type.isPrimitive())
+			return true;
+		else if (type.equals(Boolean.class) || type.equals(Short.class)
+				|| type.equals(Integer.class) || type.equals(Long.class)
+				|| type.equals(Float.class) || type.equals(Double.class)
+				|| type.equals(Character.class)) {
+			return true;
+		}
 		return false;
 	}
 }

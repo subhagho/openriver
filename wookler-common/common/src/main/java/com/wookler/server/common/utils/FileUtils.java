@@ -35,8 +35,8 @@ import java.util.UUID;
  */
 public class FileUtils {
     public static final class Constants {
-        public static final String _PARAM_TEMPDIR_ = "ipq.core.TEMPDIR";
-        public static final String _PARAM_WORKDIR_ = "ipq.core.WORKDIR";
+        public static final String _PARAM_TEMPDIR_ = "river.core.TEMPDIR";
+        public static final String _PARAM_WORKDIR_ = "river.core.WORKDIR";
 
         public static String TEMPDIR = System.getProperty("java.io.tmpdir");
         public static String WORKDIR = System.getProperty("java.io.tmpdir");

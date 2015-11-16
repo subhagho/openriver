@@ -12,7 +12,7 @@ public class AdHocTests {
 
     public static void main(String[] args) {
         try {
-            String cf = "/work/dev/IPQ/server/src/test/resources/server-config-pull.xml";
+            String cf = "/work/dev/RIVER/server/src/test/resources/server-config-pull.xml";
             Config c = new Config(cf, "/configuration");
             c.load();
 

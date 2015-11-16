@@ -58,7 +58,7 @@ public class MessageFilterProcessor<M> extends Processor<M> {
 		public static final String CONFIG_ATTR_QUERY = "q";
 		public static final String CONFIG_NODE_HANDLER = "filter-handler";
 
-		public static final String MONITOR_NAMESPACE = "ipq.counters.filter.processor";
+		public static final String MONITOR_NAMESPACE = "river.counters.filter.processor";
 
 		public static final String MONITOR_COUNTER_INVALIDS = "invalids";
 	}

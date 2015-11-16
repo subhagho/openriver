@@ -1,12 +1,9 @@
 /*
  * Copyright 2014 Subhabrata Ghosh
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,12 +15,16 @@ package com.wookler.server.common.config;
 
 import com.wookler.server.common.ConfigurationException;
 import com.wookler.server.common.DataNotFoundException;
+import com.wookler.server.common.utils.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Configuration utility methods.
- * <p/>
+ * <p>
  * Created by subghosh on 16/02/14.
  */
 public class ConfigUtils {
@@ -55,8 +56,8 @@ public class ConfigUtils {
 				}
 			}
 		}
-		throw new DataNotFoundException("No entity found for path. [path="
-				+ path + "]");
+		throw new DataNotFoundException(
+				"No entity found for path. [path=" + path + "]");
 	}
 
 	/**
@@ -87,8 +88,8 @@ public class ConfigUtils {
 				}
 			}
 		}
-		throw new DataNotFoundException("No entity found for path. [path="
-				+ path + "]");
+		throw new DataNotFoundException(
+				"No entity found for path. [path=" + path + "]");
 	}
 
 	/**
@@ -200,5 +201,73 @@ public class ConfigUtils {
 	 */
 	public static final boolean hasQuery(String name) {
 		return (name.indexOf('@') > 0);
+	}
+
+	public static final ConfigNode parse(ConfigNode node, Object source)
+			throws ConfigurationException {
+		node = getConfigNode(node, source);
+		if (node == null)
+			throw new ConfigurationException(
+					"Error finding configuration node for type.");
+		try {
+			Class<?> type = source.getClass();
+			Field[] fields = ReflectionUtils.getAllFields(type);
+			if (fields != null && fields.length > 0) {
+				ConfigParams params = null;
+				ConfigAttributes attrs = null;
+				for (Field f : fields) {
+					if (f.isAnnotationPresent(CParam.class)) {
+						CParam p = f.getAnnotation(CParam.class);
+						String pn = p.name();
+						String value = null;
+						if (!StringUtils.isEmpty(pn)) {
+							if (pn.startsWith("@")) {
+								if (attrs == null) {
+									attrs = attributes(node);
+								}
+								pn = pn.replace("@", "");
+								value = attrs.attribute(pn);
+							} else {
+								if (params == null) {
+									params = params(node);
+								}
+								value = params.param(pn);
+							}
+							if (!StringUtils.isEmpty(value)) {
+								ReflectionUtils.setValueFromString(value,
+										source, f);
+							} else if (p.required()) {
+								throw new ConfigurationException(
+										"Missing required parameter/attribute. [name="
+												+ pn + "][path="
+												+ node.getAbsolutePath() + "]");
+							}
+						}
+					}
+				}
+			}
+			return node;
+		} catch (DataNotFoundException e) {
+			throw new ConfigurationException(
+					"Error parsing configuration data.", e);
+		}
+	}
+
+	public static final ConfigNode getConfigNode(ConfigNode node, Object source)
+			throws ConfigurationException {
+		Class<?> type = source.getClass();
+		if (type.isAnnotationPresent(CPath.class)) {
+			CPath cp = type.getAnnotation(CPath.class);
+			String path = cp.path();
+			if (!StringUtils.isEmpty(path)) {
+				if (!(node instanceof ConfigPath))
+					throw new ConfigurationException(
+							"Invalid configuration node type. Expected path node. [path="
+									+ node.getAbsolutePath() + "]");
+				ConfigPath pp = (ConfigPath) node;
+				node = pp.search(path);
+			}
+		}
+		return node;
 	}
 }

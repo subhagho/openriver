@@ -54,7 +54,7 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 		public static final String CONFIG_ACK_TIMEOUT = "subscriber.ack.timeout";
 		public static final String CONFIG_RETRY_COUNT = "subscriber.retry.count";
 
-		public static final String MONITOR_NAMESPACE = "ipq.counters.subscriber";
+		public static final String MONITOR_NAMESPACE = "river.counters.subscriber";
 		public static final String MONITOR_COUNTER_ACKS = "acks";
 		public static final String MONITOR_COUNTER_ACKS_CACHE_ADD = "acks.add";
 		public static final String MONITOR_COUNTER_ACKS_CACHE_REM = "acks.remove";

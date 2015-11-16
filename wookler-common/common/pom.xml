@@ -48,6 +48,11 @@
 			<artifactId>curator-recipes</artifactId>
 			<version>2.7.1</version>
 		</dependency>
+		<dependency>
+			<groupId>commons-beanutils</groupId>
+			<artifactId>commons-beanutils</artifactId>
+			<version>1.9.2</version>
+		</dependency>
 
 		<!-- Jackson Json Dependencies -->
 		<dependency>

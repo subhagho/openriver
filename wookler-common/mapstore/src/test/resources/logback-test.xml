@@ -17,7 +17,7 @@
   -->
 
 <configuration>
-    <property name="LOGDIR" value="/tmp/ipq/test/log" />
+    <property name="LOGDIR" value="/tmp/river/test/log" />
     <property name="APP" value="wookler-test" />
 
     <contextName>wookler</contextName>

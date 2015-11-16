@@ -183,7 +183,7 @@ public class MessageQueue<M> implements Queue<M> {
 	 * 
 	 * <pre>
 	 * {@code
-	 *     <queue name="TEST-IPQ-PULL">
+	 *     <queue name="TEST-RIVER-PULL">
 	 *          <params>
 	 *              <param name="queue.lock.timeout" value="[DEFAULT LOCK TIMEOUTS]"/>
 	 *              <param name="queue.message.converter" value="[Message to Byte Converter] "/>

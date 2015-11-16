@@ -59,7 +59,7 @@ public class MessageBlock {
 	}
 
 	public static final class Constants {
-		public static final String MONITOR_NAMESPACE = "ipq.counters.block";
+		public static final String MONITOR_NAMESPACE = "river.counters.block";
 
 		public static final String MONITOR_COUNTER_READTIME = "time.read";
 		public static final String MONITOR_COUNTER_ADDTIME = "time.write";

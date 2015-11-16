@@ -37,7 +37,7 @@ public interface Queue<M> extends Configurable {
 		public static final String CONFIG_ATTR_NAME = "name";
 		public static final String CONFIG_ATTR_CLASS = "class";
 
-		public static final String MONITOR_NAMESPACE = "ipq.counters.queue";
+		public static final String MONITOR_NAMESPACE = "river.counters.queue";
 
 		public static final String MONITOR_COUNTER_ADDS = "adds";
 		public static final String MONITOR_COUNTER_ADDTIME = "time.add";

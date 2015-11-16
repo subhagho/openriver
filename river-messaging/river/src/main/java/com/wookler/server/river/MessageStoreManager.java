@@ -57,7 +57,7 @@ public class MessageStoreManager implements Configurable {
 		public static final String CONFIG_UNUSED_BLOCKS = "queue.blocks.unused";
 		public static final String CONFIG_CHRONICLE_SZIE = "queue.chronicle.size";
 
-		public static final String MONITOR_NAMESPACE = "ipq.counters.queue.store";
+		public static final String MONITOR_NAMESPACE = "river.counters.queue.store";
 
 		public static final String MONITOR_COUNTER_ADDS = "adds";
 		public static final String MONITOR_COUNTER_READS = "reads";

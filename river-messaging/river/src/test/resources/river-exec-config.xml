@@ -24,8 +24,10 @@
                 <param name="monitor.window.recycle" value="10ss"/>
                 <param name="monitor.frequency.write" value="1mm"/>
             </params>
-            <counter class="com.wookler.server.common.counter.LogCounterLogger" />
-            <heartbeat class="com.wookler.server.common.counter.LogHeartbeatLogger" />
+            <counter
+                    class="com.wookler.server.common.counter.LogCounterLogger"/>
+            <heartbeat
+                    class="com.wookler.server.common.counter.LogHeartbeatLogger"/>
         </monitor>
         <task-manager name="TEST-RIVER-TM">
             <params>
@@ -37,8 +39,10 @@
         <queue name="TEST-RIVER-EXEC">
             <params>
                 <param name="queue.lock.timeout" value="200"/>
-                <param name="queue.message.converter" value="com.wookler.server.river.test.StringMessageConverter"/>
-                <param name="ehcache.config" value="src/test/resources/test-ehcache.xml"/>
+                <param name="queue.message.converter"
+                       value="com.wookler.server.river.test.StringMessageConverter"/>
+                <param name="ehcache.config"
+                       value="src/test/resources/test-ehcache.xml"/>
                 <param name="queue.directory" value="/tmp/river/test"/>
                 <param name="queue.onstart.reload" value="true"/>
                 <param name="queue.recovery.threshold" value="100"/>
@@ -51,7 +55,8 @@
             </recycle>
             <backup>
                 <params>
-                    <param name="backup.directory" value="/tmp/river/test/backup"/>
+                    <param name="backup.directory"
+                           value="/tmp/river/test/backup"/>
                     <param name="backup.retention" value="2hh"/>
                 </params>
             </backup>
@@ -71,7 +76,8 @@
                     </params>
                 </processor>
             </subscriber-->
-            <subscriber name="TEST-RIVER-EXEC-SUBSCRIBER-1" class="com.wookler.server.river.MessageProcessor">
+            <subscriber name="TEST-RIVER-EXEC-SUBSCRIBER-1"
+                        class="com.wookler.server.river.MessageProcessor">
                 <params>
                     <param name="subscriber.batch.size" value="4096"/>
                     <param name="subscriber.poll.timeout" value="300"/>
@@ -85,24 +91,33 @@
                         <param name="executor.pool.size" value="2"/>
                     </params>
                 </executor>
-                <processor name="TEST-EXEC-CONSUMER-1" class="com.wookler.server.river.test.Consumer">
+                <processor name="TEST-EXEC-CONSUMER-1"
+                           class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
-                        <param name="directory.output" value="/tmp/river/test/pull"/>
+                        <param name="queue.pull.name"
+                               value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
+                        <param name="directory.output"
+                               value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>
-                <processor name="TEST-EXEC-CONSUMER-2" class="com.wookler.server.river.test.Consumer">
+                <processor name="TEST-EXEC-CONSUMER-2"
+                           class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
-                        <param name="directory.output" value="/tmp/river/test/pull"/>
+                        <param name="queue.pull.name"
+                               value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
+                        <param name="directory.output"
+                               value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>
-                <processor name="TEST-EXEC-CONSUMER-3" class="com.wookler.server.river.test.Consumer">
+                <processor name="TEST-EXEC-CONSUMER-3"
+                           class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
-                        <param name="directory.output" value="/tmp/river/test/pull"/>
+                        <param name="queue.pull.name"
+                               value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
+                        <param name="directory.output"
+                               value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>

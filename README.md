@@ -133,17 +133,17 @@ Number of messages/second   : 218908
 ##Examples
 ***
 
-The [example](/examples) project contains various implementations that highlight the features of this library. The [Main](/examples/src/main/java/com/paypal/river/examples/Main.java) class in this project can be used to launch any of the provided examples. The examples also provide details around the configurations for using the queue(s) and subscriber modes.
+The [example](/examples) project contains various implementations that highlight the features of this library. The [Main](/examples/src/main/java/com/wookler/river/examples/Main.java) class in this project can be used to launch any of the provided examples. The examples also provide details around the configurations for using the queue(s) and subscriber modes.
 
 Running the examples:
 
 ```
-java -cp river-examples-1.0-SNAPSHOT-jar-with-dependencies.jar com.paypal.river.examples.Main --config [configfile path] --example com.paypal.river.examples.MessagePullSample 
+java -cp river-examples-1.0-SNAPSHOT-jar-with-dependencies.jar com.wookler.river.examples.Main --config [configfile path] --example com.wookler.river.examples.MessagePullSample 
 ```
 
 ###Environment Setup
 
-The queuing library also includes certain utility frameworks for thread management, processing counters, etc. These utilities are in the [common](/common) project. The core messaging framework is dependent on these to be setup as part of the execution environment. There is a [environment setup singleton](/common/src/main/java/com/paypal/river/common/Env.java) provided that can be used
+The queuing library also includes certain utility frameworks for thread management, processing counters, etc. These utilities are in the [common](/common) project. The core messaging framework is dependent on these to be setup as part of the execution environment. There is a [environment setup singleton](/common/src/main/java/com/wookler/river/common/Env.java) provided that can be used
 to perform all the required setup function. This singleton needs to be invoked/initialized before the queue definitions can be loaded.
 
 #####Snippet
@@ -172,9 +172,9 @@ to perform all the required setup function. This singleton needs to be invoked/i
                         <param name="monitor.frequency.write" value="1mm"/>
                     </params>
                     <!-- Implementation class for logging application counters -->
-                    <counter class="com.paypal.river.examples.utils.LogCounterLogger"/>
+                    <counter class="com.wookler.river.examples.utils.LogCounterLogger"/>
                     <!-- Implementation class for logging thread heartbeats -->
-                    <heartbeat class="com.paypal.river.examples.utils.LogHeartbeatLogger"/>
+                    <heartbeat class="com.wookler.river.examples.utils.LogHeartbeatLogger"/>
                 </monitor>
                 <!-- Background managed task manager -->
                 <task-manager name="TEST-RIVER-TM">
@@ -193,7 +193,7 @@ This section gives a brief overview of some utility/framework classes available 
 ####Application Counters
 
 Application Counters are available to monitor Counts or Averages. The counter framework can be used to define arbitrary counters for monitoring application progress and/or performance. Counters need to be registered on initialization 
-and then can be used to capture progress. Both simple (non-locking) and concurrent counters are available. A utility class [Monitoring](/common/src/main/java/com/paypal/river/common/utils/Monitoring.java) is available to make registering and updating counters
+and then can be used to capture progress. Both simple (non-locking) and concurrent counters are available. A utility class [Monitoring](/common/src/main/java/com/wookler/river/common/utils/Monitoring.java) is available to make registering and updating counters
 simpler.
 
 #####Registering Counters:
@@ -269,9 +269,9 @@ Sample output of a simple counter logging implementation to write the counters t
 [APP INFO: [APP NAME:TEST-RIVER][IP:10.242.83.186][HOSTNAME:10.242.83.186][START TIME:1411641094981]] {{THREAD: ID=15, NAME=CONSUMER-TEST-CONSUMER-2, STATE=WAITING} CPUTIME=19259811, USERTIME=15274813}
 </pre>
 
-####[Monitored Threads](/common/src/main/java/com/paypal/river/common/MonitoredThread.java)
+####[Monitored Threads](/common/src/main/java/com/wookler/river/common/MonitoredThread.java)
 
-Threads launched by the core framework provides the hooks to be monitored via heartbeats. The [framework monitor](/common/src/main/java/com/paypal/river/common/Monitor.java)
+Threads launched by the core framework provides the hooks to be monitored via heartbeats. The [framework monitor](/common/src/main/java/com/wookler/river/common/Monitor.java)
 periodically polls and logs the status of these registered threads. This framework can also be used by the application in case it needs to launch and manage threads.
 
 
@@ -310,7 +310,7 @@ This provides snippets for setting up and configuring the queue(s).
                     <!-- Queue Lock Timeout - Used to acquire read locks on the queue. -->
                     <param name="queue.lock.timeout" value="100"/>
                     <!-- Byte transformation implementation - used when serializing/de-serializing messages to/from the queue -->
-                    <param name="queue.message.converter" value="com.paypal.river.examples.utils.StringMessageConverter"/>
+                    <param name="queue.message.converter" value="com.wookler.river.examples.utils.StringMessageConverter"/>
                     <!-- Cache configuration file - EHCache used to record messages for ACK/resend. -->
                     <param name="ehcache.config" value="examples/src/main/resources/example-ehcache.xml"/>
                     <!-- Directory path where Chronicle files are created. -->
@@ -322,7 +322,7 @@ This provides snippets for setting up and configuring the queue(s).
                     Strategy for re-cycling Chronicle data files.
                     Strategy Options : Size Based or Time Based
                 -->
-                <recycle class="com.paypal.river.core.SizeBasedRecycle">
+                <recycle class="com.wookler.river.core.SizeBasedRecycle">
                     <params>
                         <!-- Size of the Chronicle (#of records not byte size) -->
                         <param name="recycle.size" value="1000000"/>
@@ -340,7 +340,7 @@ This provides snippets for setting up and configuring the queue(s).
             </queue>
 
 ```
-###[Reactor Example](/examples/src/main/java/com/paypal/river/examples/ReactorSample.java)
+###[Reactor Example](/examples/src/main/java/com/wookler/river/examples/ReactorSample.java)
 
 This example implements **_message processors_** embedded within the subscribers to react to and handle incoming events.
 

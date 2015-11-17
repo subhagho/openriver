@@ -23,6 +23,7 @@ import com.wookler.server.common.ConfigurationException;
 import com.wookler.server.common.DataNotFoundException;
 import com.wookler.server.common.EObjectState;
 import com.wookler.server.common.Env;
+import com.wookler.server.common.GlobalConstants;
 import com.wookler.server.common.LockTimeoutException;
 import com.wookler.server.common.ManagedTask;
 import com.wookler.server.common.ObjectState;
@@ -30,9 +31,9 @@ import com.wookler.server.common.StateException;
 import com.wookler.server.common.Task.TaskException;
 import com.wookler.server.common.TaskState;
 import com.wookler.server.common.TaskState.ETaskState;
-import com.wookler.server.common.config.ConfigAttributes;
+import com.wookler.server.common.config.CParam;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.common.config.ConfigNode;
-import com.wookler.server.common.config.ConfigParams;
 import com.wookler.server.common.config.ConfigPath;
 import com.wookler.server.common.config.ConfigUtils;
 import com.wookler.server.common.model.Serializer;
@@ -43,60 +44,215 @@ import com.wookler.server.common.utils.LogUtils;
  * @author subghosh
  *
  */
+@CPath(path = "map-data-store")
 public class MapDataStore<K, V> implements Configurable {
 	public static final class Constants {
-		public static final String CONFIG_NODE_NAME = "map-data-store";
-		public static final String CONFIG_NODE_PARTITIONS = "partitions";
-		public static final String CONFIG_ATTR_NAME = "name";
-		public static final String CONFIG_ATTR_MAXPARTS = "partitions.max";
-		public static final String CONFIG_ATTR_MINPARTS = "partitions.min";
-		public static final String CONFIG_PARAM_KEYSERDE = "serializer.key";
-		public static final String CONFIG_PARAM_VALUESERDE = "serializer.value";
-
-		private static final HashFunction HASHFn = Hashing.murmur3_128();
+		private static final HashFunction	HASHFn			= Hashing
+				.murmur3_128();
 		@SuppressWarnings("serial")
-		private static final Funnel<String> FUNNEL_STR = new Funnel<String>() {
+		private static final Funnel<String>	FUNNEL_STR		= new Funnel<String>() {
 			public void funnel(String from, PrimitiveSink into) {
 				into.putBytes(from.getBytes());
 			}
 		};
 		@SuppressWarnings("serial")
-		private static final Funnel<byte[]> FUNNEL_BYTES = new Funnel<byte[]>() {
+		private static final Funnel<byte[]>	FUNNEL_BYTES	= new Funnel<byte[]>() {
 			public void funnel(byte[] from, PrimitiveSink into) {
 				into.putBytes(from);
 			}
 		};
 	}
 
-	private static final class PartitionDefinition {
-		public static final String CONFIG_FILLPCT = "partition.fill.pct";
-		public static final String CONFIG_BASEDIR = "directory.base";
-		public static final String CONFIG_MAX_SIZE = "size.partition.max";
-		public static final String CONFIG_AVG_KEYSIZE = "size.key.avg";
-		public static final String CONFIG_AVG_VALUESIZE = "size.value.avg";
+	public static final class MapDataStoreConfig {
+		@CParam(name = "@" + GlobalConstants.CONFIG_ATTR_NAME)
+		private String		name;
+		@CParam(name = "@partitions.max", required = false)
+		private int			maxPartitions	= 1;
+		@CParam(name = "@partitions.min", required = false)
+		private int			minPartitions	= 1;
+		@CParam(name = "serializer.key", required = false)
+		private Class<?>	keySerializer;
+		@CParam(name = "serializer.value", required = false)
+		private Class<?>	valueSerializer;
 
-		public String Directory;
-		public int MaxSize;
-		public double AvgKeySize;
-		public double AvgValueSize;
-		public double FillPct = MapDataPartition.DEFAULT_FILL_PCT;
+		/**
+		 * @return the name
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * @param name
+		 *            the name to set
+		 */
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		/**
+		 * @return the maxPartitions
+		 */
+		public int getMaxPartitions() {
+			return maxPartitions;
+		}
+
+		/**
+		 * @param maxPartitions
+		 *            the maxPartitions to set
+		 */
+		public void setMaxPartitions(int maxPartitions) {
+			this.maxPartitions = maxPartitions;
+		}
+
+		/**
+		 * @return the minPartitions
+		 */
+		public int getMinPartitions() {
+			return minPartitions;
+		}
+
+		/**
+		 * @param minPartitions
+		 *            the minPartitions to set
+		 */
+		public void setMinPartitions(int minPartitions) {
+			this.minPartitions = minPartitions;
+		}
+
+		/**
+		 * @return the keySerializer
+		 */
+		public Class<?> getKeySerializer() {
+			return keySerializer;
+		}
+
+		/**
+		 * @param keySerializer
+		 *            the keySerializer to set
+		 */
+		public void setKeySerializer(Class<?> keySerializer) {
+			this.keySerializer = keySerializer;
+		}
+
+		/**
+		 * @return the valueSerializer
+		 */
+		public Class<?> getValueSerializer() {
+			return valueSerializer;
+		}
+
+		/**
+		 * @param valueSerializer
+		 *            the valueSerializer to set
+		 */
+		public void setValueSerializer(Class<?> valueSerializer) {
+			this.valueSerializer = valueSerializer;
+		}
+
 	}
 
-	protected ObjectState state = new ObjectState();
-	protected String name;
-	protected Class<K> keyClass;
-	protected Class<V> valueClass;
-	protected Serializer<K> keySerializer = null;
-	protected Serializer<V> valueSerializer = null;
-	private int maxPartitions = 1;
-	private int minPartitions = 1;
-	private HashMap<String, MapDataPartition> partitions;
-	private RendezvousHash<byte[], String> rHashIndex = new RendezvousHash<byte[], String>(
+	@CPath(path = "partition")
+	public static final class PartitionDefinition {
+		@CParam(name = "directory.base")
+		public File		Directory;
+		@CParam(name = "size.partition.max")
+		public int		MaxSize;
+		@CParam(name = "size.key.avg")
+		public double	AvgKeySize;
+		@CParam(name = "size.value.avg")
+		public double	AvgValueSize;
+		@CParam(name = "partition.fill.pct", required = false)
+		public double	FillPct	= MapDataPartition.DEFAULT_FILL_PCT;
+
+		/**
+		 * @return the directory
+		 */
+		public File getDirectory() {
+			return Directory;
+		}
+
+		/**
+		 * @param directory
+		 *            the directory to set
+		 */
+		public void setDirectory(File directory) {
+			Directory = directory;
+		}
+
+		/**
+		 * @return the maxSize
+		 */
+		public int getMaxSize() {
+			return MaxSize;
+		}
+
+		/**
+		 * @param maxSize
+		 *            the maxSize to set
+		 */
+		public void setMaxSize(int maxSize) {
+			MaxSize = maxSize;
+		}
+
+		/**
+		 * @return the avgKeySize
+		 */
+		public double getAvgKeySize() {
+			return AvgKeySize;
+		}
+
+		/**
+		 * @param avgKeySize
+		 *            the avgKeySize to set
+		 */
+		public void setAvgKeySize(double avgKeySize) {
+			AvgKeySize = avgKeySize;
+		}
+
+		/**
+		 * @return the avgValueSize
+		 */
+		public double getAvgValueSize() {
+			return AvgValueSize;
+		}
+
+		/**
+		 * @param avgValueSize
+		 *            the avgValueSize to set
+		 */
+		public void setAvgValueSize(double avgValueSize) {
+			AvgValueSize = avgValueSize;
+		}
+
+		/**
+		 * @return the fillPct
+		 */
+		public double getFillPct() {
+			return FillPct;
+		}
+
+		/**
+		 * @param fillPct
+		 *            the fillPct to set
+		 */
+		public void setFillPct(double fillPct) {
+			FillPct = fillPct;
+		}
+
+	}
+
+	protected ObjectState						state			= new ObjectState();
+	protected MapDataStoreConfig				dConfig			= new MapDataStoreConfig();
+	protected Serializer<K>						keySerializer	= null;
+	protected Serializer<V>						valueSerializer	= null;
+	private HashMap<String, MapDataPartition>	partitions;
+	private RendezvousHash<byte[], String>		rHashIndex		= new RendezvousHash<byte[], String>(
 			Constants.HASHFn, Constants.FUNNEL_BYTES, Constants.FUNNEL_STR,
 			new ArrayList<String>());
-	private PartitionDefinition def = new PartitionDefinition();
-	protected ReentrantReadWriteLock pLock = new ReentrantReadWriteLock();
-	private Runner runner;
+	private PartitionDefinition					def				= new PartitionDefinition();
+	protected ReentrantReadWriteLock			pLock			= new ReentrantReadWriteLock();
+	private Runner								runner;
 
 	/**
 	 * Create a new instance of the Map Data Store.
@@ -107,15 +263,15 @@ public class MapDataStore<K, V> implements Configurable {
 	 *            - Type of Value
 	 */
 	public MapDataStore(Class<K> keyClass, Class<V> valueClass) {
-		this.keyClass = keyClass;
-		this.valueClass = valueClass;
+		dConfig.keySerializer = keyClass;
+		dConfig.valueSerializer = valueClass;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
-	 * com.wookler.server.common.Configurable#configure(com.wookler.server.common
+	 * com.wookler.server.common.Configurable#configure(com.wookler.server.
+	 * common
 	 * .config.ConfigNode)
 	 */
 	@SuppressWarnings("unchecked")
@@ -126,33 +282,26 @@ public class MapDataStore<K, V> implements Configurable {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
-			ConfigAttributes attrs = ConfigUtils.attributes(config);
-			name = attrs.attribute(Constants.CONFIG_ATTR_NAME);
-			if (StringUtils.isEmpty(name))
-				throw new ConfigurationException("Missing attribute. [name="
-						+ Constants.CONFIG_ATTR_NAME + "]");
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
+			ConfigUtils.parse(config, dConfig);
 
-			ConfigParams params = ConfigUtils.params(config);
-
-			// Check if any Key Serializer is specified in the configuration.
-			String s = params.param(Constants.CONFIG_PARAM_KEYSERDE);
-			if (!StringUtils.isEmpty(s)) {
-				Class<?> cls = Class.forName(s);
-				Object o = cls.newInstance();
+			if (dConfig.keySerializer != null) {
+				Object o = dConfig.keySerializer.newInstance();
 				if (!(o instanceof Serializer<?>)) {
 					throw new ConfigurationException(
 							"Invalid Key Serializer class. [class="
-									+ cls.getCanonicalName() + "]");
+									+ dConfig.keySerializer.getCanonicalName()
+									+ "]");
 				}
 				keySerializer = (Serializer<K>) o;
-				SerializerRegistry.get().add(keyClass, keySerializer);
+				SerializerRegistry.get().add(dConfig.keySerializer,
+						keySerializer);
 			}
-
 			// If no Key Serializer specified, check if any has been registered.
 			if (keySerializer == null) {
-				Serializer<?> sr = SerializerRegistry.get().get(keyClass);
+				Serializer<?> sr = SerializerRegistry.get()
+						.get(dConfig.keySerializer);
 				if (sr != null) {
 					keySerializer = (Serializer<K>) sr;
 				}
@@ -160,28 +309,30 @@ public class MapDataStore<K, V> implements Configurable {
 			if (keySerializer == null) {
 				throw new ConfigurationException(
 						"No Serializer found for specified key type. [class="
-								+ keyClass.getCanonicalName() + "]");
+								+ dConfig.keySerializer.getCanonicalName()
+								+ "]");
 			}
 
 			// Check if any value Serializer has been specified in the
 			// configuration.
-			s = params.param(Constants.CONFIG_PARAM_VALUESERDE);
-			if (!StringUtils.isEmpty(s)) {
-				Class<?> cls = Class.forName(s);
-				Object o = cls.newInstance();
+			if (dConfig.valueSerializer != null) {
+				Object o = dConfig.valueSerializer.newInstance();
 				if (!(o instanceof Serializer<?>)) {
 					throw new ConfigurationException(
 							"Invalid Value Serializer class. [class="
-									+ cls.getCanonicalName() + "]");
+									+ dConfig.valueSerializer.getCanonicalName()
+									+ "]");
 				}
 				valueSerializer = (Serializer<V>) o;
-				SerializerRegistry.get().add(valueClass, valueSerializer);
+				SerializerRegistry.get().add(dConfig.valueSerializer,
+						valueSerializer);
 			}
 
 			// If no Value Serializer specified, check if any has been
 			// registered.
 			if (valueSerializer == null) {
-				Serializer<?> sr = SerializerRegistry.get().get(valueClass);
+				Serializer<?> sr = SerializerRegistry.get()
+						.get(dConfig.valueSerializer);
 				if (sr != null) {
 					valueSerializer = (Serializer<V>) sr;
 				}
@@ -189,15 +340,15 @@ public class MapDataStore<K, V> implements Configurable {
 			if (valueSerializer == null) {
 				throw new ConfigurationException(
 						"No Serializer found for specified value type. [class="
-								+ valueClass.getCanonicalName() + "]");
+								+ dConfig.valueSerializer.getCanonicalName()
+								+ "]");
 			}
 
-			ConfigNode pnode = ((ConfigPath) config)
-					.search(Constants.CONFIG_NODE_PARTITIONS);
+			ConfigNode pnode = ConfigUtils.getConfigNode(config,
+					PartitionDefinition.class, null);
 			if (pnode == null)
 				throw new ConfigurationException(
-						"Missing partitions configurations. [node="
-								+ Constants.CONFIG_NODE_PARTITIONS + "]");
+						"Missing partitions configurations.");
 			// Configure the Map Data Partitions.
 			createDataPartitions(pnode);
 
@@ -216,11 +367,6 @@ public class MapDataStore<K, V> implements Configurable {
 			throw new ConfigurationException(
 					"Error loading map-store configuration.", e);
 		} catch (IOException e) {
-			LogUtils.stacktrace(getClass(), e);
-			state.setError(e).setState(EObjectState.Exception);
-			throw new ConfigurationException(
-					"Error loading map-store configuration.", e);
-		} catch (ClassNotFoundException e) {
 			LogUtils.stacktrace(getClass(), e);
 			state.setError(e).setState(EObjectState.Exception);
 			throw new ConfigurationException(
@@ -245,58 +391,19 @@ public class MapDataStore<K, V> implements Configurable {
 
 	private void createDataPartitions(ConfigNode node)
 			throws ConfigurationException, DataNotFoundException, IOException {
-		ConfigAttributes attrs = ConfigUtils.attributes(node);
-		String s = attrs.attribute(Constants.CONFIG_ATTR_MAXPARTS);
-		if (StringUtils.isEmpty(s))
-			throw new ConfigurationException("Missing attribute. [name="
-					+ Constants.CONFIG_ATTR_MAXPARTS + "]");
-		maxPartitions = Integer.parseInt(s);
-		if (maxPartitions <= 0)
+		ConfigUtils.parse(node, def);
+
+		if (dConfig.maxPartitions <= 0)
 			throw new ConfigurationException(
-					"Invalid value for parameter. [attribute="
-							+ Constants.CONFIG_ATTR_MAXPARTS + "]");
-		partitions = new HashMap<>(maxPartitions);
+					"Invalid value maximum partitions");
+		partitions = new HashMap<>(dConfig.maxPartitions);
 
-		s = attrs.attribute(Constants.CONFIG_ATTR_MINPARTS);
-		if (!StringUtils.isEmpty(s))
-			minPartitions = Integer.parseInt(s);
-
-		ConfigParams params = ConfigUtils.params(node);
-		s = params.param(PartitionDefinition.CONFIG_BASEDIR);
-		if (StringUtils.isEmpty(s))
-			throw new ConfigurationException("Missing parameter. [name="
-					+ PartitionDefinition.CONFIG_BASEDIR + "]");
-		def.Directory = s;
-		File d = new File(def.Directory);
-		if (!d.exists())
-			d.mkdirs();
-
-		s = params.param(PartitionDefinition.CONFIG_MAX_SIZE);
-		if (StringUtils.isEmpty(s))
-			throw new ConfigurationException("Missing parameter. [name="
-					+ PartitionDefinition.CONFIG_MAX_SIZE + "]");
-		def.MaxSize = Integer.parseInt(s);
-
-		s = params.param(PartitionDefinition.CONFIG_AVG_KEYSIZE);
-		if (StringUtils.isEmpty(s))
-			throw new ConfigurationException("Missing parameter. [name="
-					+ PartitionDefinition.CONFIG_AVG_KEYSIZE + "]");
-		def.AvgKeySize = Double.parseDouble(s);
-
-		s = params.param(PartitionDefinition.CONFIG_AVG_VALUESIZE);
-		if (StringUtils.isEmpty(s))
-			throw new ConfigurationException("Missing parameter. [name="
-					+ PartitionDefinition.CONFIG_AVG_VALUESIZE + "]");
-		def.AvgValueSize = Double.parseDouble(s);
-
-		s = params.param(PartitionDefinition.CONFIG_FILLPCT);
-		if (!StringUtils.isEmpty(s)) {
-			def.FillPct = Double.parseDouble(s) / 100;
-		}
+		if (!def.Directory.exists())
+			def.Directory.mkdirs();
 
 		checkExistingPartitions();
-		if (partitions.size() < minPartitions) {
-			int rs = minPartitions - partitions.size();
+		if (partitions.size() < dConfig.minPartitions) {
+			int rs = dConfig.minPartitions - partitions.size();
 			for (int ii = 0; ii < rs; ii++) {
 				createNewPartition();
 			}
@@ -307,8 +414,9 @@ public class MapDataStore<K, V> implements Configurable {
 		pLock.writeLock().lock();
 		try {
 			MapDataPartition part = new MapDataPartition(
-					MapDataPartition.createPartitionUID(), def.Directory,
-					def.MaxSize, def.AvgKeySize, def.AvgValueSize);
+					MapDataPartition.createPartitionUID(),
+					def.Directory.getAbsolutePath(), def.MaxSize,
+					def.AvgKeySize, def.AvgValueSize);
 			part.fillpct(def.FillPct);
 
 			partitions.put(part.id(), part);
@@ -336,7 +444,7 @@ public class MapDataStore<K, V> implements Configurable {
 	}
 
 	private void checkExistingPartitions() throws IOException {
-		File pd = new File(def.Directory);
+		File pd = def.Directory;
 		if (pd.exists()) {
 			File[] pdirs = pd.listFiles();
 			if (pdirs != null && pdirs.length > 0) {
@@ -351,7 +459,6 @@ public class MapDataStore<K, V> implements Configurable {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.common.Configurable#dispose()
 	 */
 	@Override
@@ -371,8 +478,16 @@ public class MapDataStore<K, V> implements Configurable {
 		}
 	}
 
-	protected byte[] getRaw(K key, long timeout) throws MapException,
-			LockTimeoutException {
+	public MapDataStoreConfig getConfig() {
+		return dConfig;
+	}
+
+	public PartitionDefinition getPartitionDef() {
+		return def;
+	}
+
+	protected byte[] getRaw(K key, long timeout)
+			throws MapException, LockTimeoutException {
 		try {
 			ObjectState.check(state, EObjectState.Available, getClass());
 			if (pLock.readLock().tryLock(timeout, TimeUnit.MILLISECONDS)) {
@@ -388,7 +503,8 @@ public class MapDataStore<K, V> implements Configurable {
 					MapDataPartition part = partitions.get(pid);
 					if (part == null) {
 						throw new MapException(
-								"No partition found for key. [key=" + pid + "]");
+								"No partition found for key. [key=" + pid
+										+ "]");
 					}
 					byte[] vb = part.get(kb, timeout);
 					if (vb != null) {
@@ -399,7 +515,7 @@ public class MapDataStore<K, V> implements Configurable {
 					pLock.readLock().unlock();
 				}
 			} else {
-				throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+				throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 						"Timeout trying for Map Store read lock.");
 			}
 		} catch (StateException e) {
@@ -407,7 +523,7 @@ public class MapDataStore<K, V> implements Configurable {
 		} catch (IOException e) {
 			throw new MapException("Error invoking serializer", e);
 		} catch (InterruptedException e) {
-			throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+			throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 					"Lock wait interrupted");
 		}
 	}
@@ -423,7 +539,8 @@ public class MapDataStore<K, V> implements Configurable {
 	 * @throws MapException
 	 * @throws LockTimeoutException
 	 */
-	public V get(K key, long timeout) throws MapException, LockTimeoutException {
+	public V get(K key, long timeout)
+			throws MapException, LockTimeoutException {
 		try {
 			byte[] data = getRaw(key, timeout);
 			if (data != null) {
@@ -452,14 +569,15 @@ public class MapDataStore<K, V> implements Configurable {
 					MapDataPartition part = partitions.get(pid);
 					if (part == null) {
 						throw new MapException(
-								"No partition found for key. [key=" + pid + "]");
+								"No partition found for key. [key=" + pid
+										+ "]");
 					}
 					return part.put(kb, data, timeout);
 				} finally {
 					pLock.readLock().unlock();
 				}
 			} else {
-				throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+				throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 						"Timeout trying for Map Store read lock.");
 			}
 		} catch (StateException e) {
@@ -467,7 +585,7 @@ public class MapDataStore<K, V> implements Configurable {
 		} catch (IOException e) {
 			throw new MapException("Error invoking serializer", e);
 		} catch (InterruptedException e) {
-			throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+			throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 					"Lock wait interrupted");
 		}
 	}
@@ -485,8 +603,8 @@ public class MapDataStore<K, V> implements Configurable {
 	 * @throws MapException
 	 * @throws LockTimeoutException
 	 */
-	public boolean put(K key, V value, long timeout) throws MapException,
-			LockTimeoutException {
+	public boolean put(K key, V value, long timeout)
+			throws MapException, LockTimeoutException {
 		try {
 			byte[] vb = valueSerializer.serialize(value);
 			if (vb == null || vb.length == 0)
@@ -507,8 +625,8 @@ public class MapDataStore<K, V> implements Configurable {
 	 * @return - Present?
 	 * @throws MapException
 	 */
-	public boolean containsKey(K key, long timeout) throws MapException,
-			LockTimeoutException {
+	public boolean containsKey(K key, long timeout)
+			throws MapException, LockTimeoutException {
 		try {
 			ObjectState.check(state, EObjectState.Available, getClass());
 			if (pLock.readLock().tryLock(timeout, TimeUnit.MILLISECONDS)) {
@@ -524,14 +642,15 @@ public class MapDataStore<K, V> implements Configurable {
 					MapDataPartition part = partitions.get(pid);
 					if (part == null) {
 						throw new MapException(
-								"No partition found for key. [key=" + pid + "]");
+								"No partition found for key. [key=" + pid
+										+ "]");
 					}
 					return part.containsKey(kb);
 				} finally {
 					pLock.readLock().unlock();
 				}
 			} else {
-				throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+				throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 						"Timeout trying for Map Store read lock.");
 			}
 		} catch (StateException e) {
@@ -539,13 +658,13 @@ public class MapDataStore<K, V> implements Configurable {
 		} catch (IOException e) {
 			throw new MapException("Error invoking serializer", e);
 		} catch (InterruptedException e) {
-			throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+			throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 					"Lock wait interrupted");
 		}
 	}
 
-	protected byte[] removeRaw(K key, long timeout) throws MapException,
-			LockTimeoutException {
+	protected byte[] removeRaw(K key, long timeout)
+			throws MapException, LockTimeoutException {
 		try {
 			ObjectState.check(state, EObjectState.Available, getClass());
 			if (pLock.readLock().tryLock(timeout, TimeUnit.MILLISECONDS)) {
@@ -561,7 +680,8 @@ public class MapDataStore<K, V> implements Configurable {
 					MapDataPartition part = partitions.get(pid);
 					if (part == null) {
 						throw new MapException(
-								"No partition found for key. [key=" + pid + "]");
+								"No partition found for key. [key=" + pid
+										+ "]");
 					}
 					byte[] vb = part.remove(kb, timeout);
 					if (vb != null) {
@@ -572,7 +692,7 @@ public class MapDataStore<K, V> implements Configurable {
 					pLock.readLock().unlock();
 				}
 			} else {
-				throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+				throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 						"Timeout trying for Map Store read lock.");
 			}
 		} catch (StateException e) {
@@ -580,7 +700,7 @@ public class MapDataStore<K, V> implements Configurable {
 		} catch (IOException e) {
 			throw new MapException("Error invoking serializer", e);
 		} catch (InterruptedException e) {
-			throw new LockTimeoutException("MAP_STORE_LOCK-" + name,
+			throw new LockTimeoutException("MAP_STORE_LOCK-" + dConfig.name,
 					"Lock wait interrupted");
 		}
 	}
@@ -596,8 +716,8 @@ public class MapDataStore<K, V> implements Configurable {
 	 * @throws MapException
 	 * @throws LockTimeoutException
 	 */
-	public V remove(K key, long timeout) throws MapException,
-			LockTimeoutException {
+	public V remove(K key, long timeout)
+			throws MapException, LockTimeoutException {
 		try {
 			byte[] data = removeRaw(key, timeout);
 			if (data != null) {
@@ -640,15 +760,14 @@ public class MapDataStore<K, V> implements Configurable {
 								"Partition reached fill percentage. [partition="
 										+ dp.id() + "][path=" + dp.directory()
 										+ "]");
-						if (partitions.size() < maxPartitions) {
+						if (partitions.size() < dConfig.maxPartitions) {
 							n_count++;
 						} else {
 							LogUtils.error(getClass(),
 									"Max partitions exhausted, cannot create new parition.");
 						}
 					} else {
-						LogUtils.debug(
-								getClass(),
+						LogUtils.debug(getClass(),
 								String.format(
 										"CURRENT SIZE: %d, CURRENT FILLPCT : %f, RESET FILLPCT: %f",
 										dp.size(), dp.usedpct(), dp.fillpct()));
@@ -671,11 +790,13 @@ public class MapDataStore<K, V> implements Configurable {
 	}
 
 	protected static final class Runner implements ManagedTask {
-		public static final long RUN_INTERVAL = 60 * 1000; // Run every minute.
-		private String name;
-		private long lastRunTimestamp;
-		private MapDataStore<?, ?> owner;
-		private TaskState state = new TaskState();
+		public static final long	RUN_INTERVAL	= 60 * 1000;		// Run
+																		// every
+																		// minute.
+		private String				name;
+		private long				lastRunTimestamp;
+		private MapDataStore<?, ?>	owner;
+		private TaskState			state			= new TaskState();
 
 		/**
 		 * Create a managed task instance to check the store health.
@@ -685,13 +806,12 @@ public class MapDataStore<K, V> implements Configurable {
 		 */
 		protected Runner(MapDataStore<?, ?> owner) {
 			this.owner = owner;
-			this.name = "GC_RUNNER-" + owner.name;
+			this.name = "GC_RUNNER-" + owner.dConfig.name;
 			this.state.state(ETaskState.Runnable);
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see com.wookler.server.common.ManagedTask#name()
 		 */
 		@Override
@@ -701,7 +821,6 @@ public class MapDataStore<K, V> implements Configurable {
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see com.wookler.server.common.ManagedTask#state()
 		 */
 		@Override
@@ -711,7 +830,6 @@ public class MapDataStore<K, V> implements Configurable {
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see
 		 * com.wookler.server.common.ManagedTask#state(com.wookler.server.common
 		 * .TaskState.ETaskState)
@@ -724,7 +842,6 @@ public class MapDataStore<K, V> implements Configurable {
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see com.wookler.server.common.ManagedTask#run()
 		 */
 		@Override
@@ -745,7 +862,6 @@ public class MapDataStore<K, V> implements Configurable {
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see com.wookler.server.common.ManagedTask#dispose()
 		 */
 		@Override
@@ -756,7 +872,6 @@ public class MapDataStore<K, V> implements Configurable {
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see
 		 * com.wookler.server.common.ManagedTask#response(com.wookler.server
 		 * .common.TaskState)
@@ -765,9 +880,9 @@ public class MapDataStore<K, V> implements Configurable {
 		public void response(TaskState state) throws TaskException {
 			if (state.state() == ETaskState.Failed
 					|| state.state() == ETaskState.Exception) {
-				LogUtils.warn(getClass(), "Task Runner [" + name
-						+ "] execuion failed. [state=" + state.state().name()
-						+ "]");
+				LogUtils.warn(getClass(),
+						"Task Runner [" + name + "] execuion failed. [state="
+								+ state.state().name() + "]");
 				if (state.error() != null) {
 					LogUtils.stacktrace(getClass(), state.error());
 					LogUtils.error(getClass(), "Task Runner : " + name + " : "
@@ -778,7 +893,6 @@ public class MapDataStore<K, V> implements Configurable {
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see com.wookler.server.common.ManagedTask#canrun()
 		 */
 		@Override
@@ -788,7 +902,8 @@ public class MapDataStore<K, V> implements Configurable {
 				return false;
 			}
 			if (state.state() == ETaskState.Runnable) {
-				return (System.currentTimeMillis() - lastRunTimestamp > RUN_INTERVAL);
+				return (System.currentTimeMillis()
+						- lastRunTimestamp > RUN_INTERVAL);
 			}
 			return false;
 		}

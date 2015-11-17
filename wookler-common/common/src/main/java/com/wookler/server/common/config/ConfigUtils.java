@@ -278,7 +278,8 @@ public class ConfigUtils {
 						"Invalid configuration node type. Expected path node. [path="
 								+ node.getAbsolutePath() + "]");
 			ConfigPath pp = (ConfigPath) node;
-			node = pp.search(path);
+			if (!checkname(node, path))
+				node = pp.search(path);
 		}
 		return node;
 	}

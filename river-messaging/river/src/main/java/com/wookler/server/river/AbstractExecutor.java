@@ -21,6 +21,7 @@ package com.wookler.server.river;
 import com.wookler.server.common.Configurable;
 import com.wookler.server.common.EProcessState;
 import com.wookler.server.common.ProcessState;
+import com.wookler.server.common.config.CPath;
 
 import org.slf4j.Logger;
 
@@ -34,11 +35,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14
  */
+@CPath(path="executor")
 public abstract class AbstractExecutor<M> implements Configurable, Runnable {
-    public static final class Constants {
-        public static final String CONFIG_NODE_NAME = "executor";
-    }
-
     protected List<Processor<M>> processors = new ArrayList<Processor<M>>();
     protected ProcessState state = new ProcessState();
     protected ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -151,6 +149,11 @@ public abstract class AbstractExecutor<M> implements Configurable, Runnable {
         return null;
     }
 
+    /**
+     * Start the executor processor.
+     * 
+     * @throws ProcessingException
+     */
     public abstract void start() throws ProcessingException;
 
     public abstract void check() throws ProcessingException;

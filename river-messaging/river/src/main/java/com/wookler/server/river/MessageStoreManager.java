@@ -1,19 +1,17 @@
 /*
- *
- *  * Copyright 2014 Subhabrata Ghosh
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
+ * * Copyright 2014 Subhabrata Ghosh
+ * *
+ * * Licensed under the Apache License, Version 2.0 (the "License");
+ * * you may not use this file except in compliance with the License.
+ * * You may obtain a copy of the License at
+ * *
+ * * http://www.apache.org/licenses/LICENSE-2.0
+ * *
+ * * Unless required by applicable law or agreed to in writing, software
+ * * distributed under the License is distributed on an "AS IS" BASIS,
+ * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * * See the License for the specific language governing permissions and
+ * * limitations under the License.
  */
 
 package com.wookler.server.river;
@@ -51,21 +49,104 @@ public class MessageStoreManager implements Configurable {
 			.getLogger(MessageStoreManager.class);
 
 	public static final class Constants {
-		public static final String CONFIG_MESGDIR = "queue.directory";
-		public static final String CONFIG_RELOAD = "queue.onstart.reload";
-		public static final String CONFIG_RECOVERY_THRESHOLD = "queue.recovery.threshold";
-		public static final String CONFIG_UNUSED_BLOCKS = "queue.blocks.unused";
-		public static final String CONFIG_CHRONICLE_SZIE = "queue.chronicle.size";
-
 		public static final String MONITOR_NAMESPACE = "river.counters.queue.store";
 
-		public static final String MONITOR_COUNTER_ADDS = "adds";
-		public static final String MONITOR_COUNTER_READS = "reads";
+		public static final String	MONITOR_COUNTER_ADDS	= "adds";
+		public static final String	MONITOR_COUNTER_READS	= "reads";
 
-		private static final EBlockState[] VALID_READ_STATES = {
+		private static final EBlockState[]	VALID_READ_STATES	= {
 				EBlockState.RW, EBlockState.RO, EBlockState.Unloaded };
-		private static final EBlockState[] VALID_GC_STATES = {
+		private static final EBlockState[]	VALID_GC_STATES		= {
 				EBlockState.Closed, EBlockState.RO, EBlockState.Unloaded };
+	}
+
+	public static final class MessageStoreConfig {
+		@CParam(name = "queue.directory")
+		private File			baseDirectory;
+		@CParam(name = "queue.onstart.reload")
+		private boolean			recoverOnRestart	= true;
+		@CParam(name = "queue.recovery.threshold")
+		private int				recoveryThreshold	= 1;
+		@CParam(name = "queue.blocks.unused")
+		private int				unusedBlocks		= 0;
+		@CParam(name = "queue.chronicle.size")
+		private EChronicleSize	chronicleSize		= EChronicleSize.MEDIUM;
+
+		/**
+		 * @return the baseDirectory
+		 */
+		public File getBaseDirectory() {
+			return baseDirectory;
+		}
+
+		/**
+		 * @param baseDirectory
+		 *            the baseDirectory to set
+		 */
+		public void setBaseDirectory(File baseDirectory) {
+			this.baseDirectory = baseDirectory;
+		}
+
+		/**
+		 * @return the recoverOnRestart
+		 */
+		public boolean isRecoverOnRestart() {
+			return recoverOnRestart;
+		}
+
+		/**
+		 * @param recoverOnRestart
+		 *            the recoverOnRestart to set
+		 */
+		public void setRecoverOnRestart(boolean recoverOnRestart) {
+			this.recoverOnRestart = recoverOnRestart;
+		}
+
+		/**
+		 * @return the recoveryThreshold
+		 */
+		public int getRecoveryThreshold() {
+			return recoveryThreshold;
+		}
+
+		/**
+		 * @param recoveryThreshold
+		 *            the recoveryThreshold to set
+		 */
+		public void setRecoveryThreshold(int recoveryThreshold) {
+			this.recoveryThreshold = recoveryThreshold;
+		}
+
+		/**
+		 * @return the unusedBlocks
+		 */
+		public int getUnusedBlocks() {
+			return unusedBlocks;
+		}
+
+		/**
+		 * @param unusedBlocks
+		 *            the unusedBlocks to set
+		 */
+		public void setUnusedBlocks(int unusedBlocks) {
+			this.unusedBlocks = unusedBlocks;
+		}
+
+		/**
+		 * @return the chronicleSize
+		 */
+		public EChronicleSize getChronicleSize() {
+			return chronicleSize;
+		}
+
+		/**
+		 * @param chronicleSize
+		 *            the chronicleSize to set
+		 */
+		public void setChronicleSize(EChronicleSize chronicleSize) {
+			this.chronicleSize = chronicleSize;
+		}
+
 	}
 
 	private static enum EChronicleSize {
@@ -75,18 +156,18 @@ public class MessageStoreManager implements Configurable {
 			if (!StringUtils.isEmpty(value)) {
 				EChronicleSize s = EChronicleSize.valueOf(value.toUpperCase());
 				switch (s) {
-				case SMALL:
-					return ChronicleConfig.SMALL;
-				case MEDIUM:
-					return ChronicleConfig.MEDIUM;
-				case LARGE:
-					return ChronicleConfig.LARGE;
-				case HUGE:
-					return ChronicleConfig.HUGE;
-				case TEST:
-					return ChronicleConfig.TEST;
-				case DEFAULT:
-					return ChronicleConfig.DEFAULT;
+					case SMALL:
+						return ChronicleConfig.SMALL;
+					case MEDIUM:
+						return ChronicleConfig.MEDIUM;
+					case LARGE:
+						return ChronicleConfig.LARGE;
+					case HUGE:
+						return ChronicleConfig.HUGE;
+					case TEST:
+						return ChronicleConfig.TEST;
+					case DEFAULT:
+						return ChronicleConfig.DEFAULT;
 				}
 			}
 			return ChronicleConfig.MEDIUM;
@@ -105,20 +186,19 @@ public class MessageStoreManager implements Configurable {
 
 	private MonitoredLock qw_lock = new MonitoredLock();
 
-	private MessageBlockList blocks;
-	private RecycleStrategy strategy;
-	private ObjectState state = new ObjectState();
-	private MessageBlockBackup backup = null;
-	private File messagedir;
-	private boolean recoverOnRestart = true;
-	private int recoveryThreshold = 1;
-	private HashMap<String, MessageBlock> blocksSubscribed = new HashMap<String, MessageBlock>();
-	private HashMap<String, Subscriber<?>> subscribers = new HashMap<String, Subscriber<?>>();
-	private AtomicLong blockIndex = new AtomicLong();
-	private String storename;
-	private HashMap<String, String[]> counters = new HashMap<String, String[]>();
-	private boolean disableExpiry = false;
-	private AckCache<?> ackCache = null;
+	private MessageBlockList				blocks;
+	private RecycleStrategy					strategy;
+	private ObjectState						state				= new ObjectState();
+	private MessageBlockBackup				backup				= null;
+	private File							messagedir;
+	private HashMap<String, MessageBlock>	blocksSubscribed	= new HashMap<String, MessageBlock>();
+	private HashMap<String, Subscriber<?>>	subscribers			= new HashMap<String, Subscriber<?>>();
+	private AtomicLong						blockIndex			= new AtomicLong();
+	private String							storename;
+	private HashMap<String, String[]>		counters			= new HashMap<String, String[]>();
+	private boolean							disableExpiry		= false;
+	private AckCache<?>						ackCache			= null;
+	private MessageStoreConfig				mConfig				= new MessageStoreConfig();
 
 	public MessageStoreManager(String storename, boolean disableExpiry,
 			AckCache<?> ackCache) {
@@ -140,38 +220,23 @@ public class MessageStoreManager implements Configurable {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
 
-			ConfigParams params = ConfigUtils.params(config);
-			String s = params.param(Constants.CONFIG_MESGDIR);
-			if (StringUtils.isEmpty(s))
-				throw new ConfigurationException("Missing parameter. [name="
-						+ Constants.CONFIG_MESGDIR + "]");
-			String dir = String.format("%s/%s", s, storename);
+			ConfigUtils.parse(config, mConfig);
 
-			LogUtils.debug(getClass(), "[" + Constants.CONFIG_MESGDIR + "="
-					+ dir + "]");
+			String dir = String.format("%s/%s",
+					mConfig.baseDirectory.getAbsolutePath(), storename);
+
+			LogUtils.debug(getClass(),
+					"[ Message Store Directory:" + dir + "]");
 			messagedir = new File(dir);
 			if (!messagedir.exists())
 				messagedir.mkdirs();
 
-			s = params.param(Constants.CONFIG_RELOAD);
-			if (!StringUtils.isEmpty(s)) {
-				LogUtils.debug(getClass(), "[" + Constants.CONFIG_RELOAD + "="
-						+ s + "]");
-				recoverOnRestart = Boolean.parseBoolean(s);
-			}
-
-			if (recoverOnRestart) {
-				// get the recovery threshold param
-				s = params.param(Constants.CONFIG_RECOVERY_THRESHOLD);
-				if (!StringUtils.isEmpty(s)) {
-					LogUtils.debug(getClass(), "["
-							+ Constants.CONFIG_RECOVERY_THRESHOLD + "=" + s
-							+ "]");
-					recoveryThreshold = Integer.parseInt(s);
-				}
+			if (mConfig.recoverOnRestart) {
+				LogUtils.debug(getClass(), "[ Recovery Threshold:"
+						+ mConfig.recoveryThreshold + "]");
 			}
 
 			// backup should be configured before setup(), since recovery might
@@ -180,17 +245,16 @@ public class MessageStoreManager implements Configurable {
 
 			configRecycle(config);
 
-			s = params.param(Constants.CONFIG_CHRONICLE_SZIE);
-			ChronicleConfig cc = EChronicleSize.get(s);
+			ChronicleConfig cc = EChronicleSize
+					.get(mConfig.chronicleSize.name());
 
 			blocks = new MessageBlockList(strategy, this, cc);
-			s = params.param(Constants.CONFIG_UNUSED_BLOCKS);
-			if (!StringUtils.isEmpty(s)) {
-				blocks.emptyBlockSize(Integer.parseInt(s));
+			if (mConfig.unusedBlocks > 0) {
+				blocks.emptyBlockSize(mConfig.unusedBlocks);
 			}
 
-			if (recoverOnRestart) {
-				recoveryThreshold += blocks.emptyBlockSize();
+			if (mConfig.recoverOnRestart) {
+				mConfig.recoveryThreshold += blocks.emptyBlockSize();
 			}
 
 			setup(cc);
@@ -201,9 +265,6 @@ public class MessageStoreManager implements Configurable {
 		} catch (ConfigurationException e) {
 			exception(e);
 			throw e;
-		} catch (DataNotFoundException e) {
-			exception(e);
-			throw new ConfigurationException("Configuration node not found.", e);
 		} catch (MessageQueueException e) {
 			exception(e);
 			throw new ConfigurationException(
@@ -212,8 +273,9 @@ public class MessageStoreManager implements Configurable {
 	}
 
 	private void registerCounters() {
-		AbstractCounter c = Monitoring.create(Constants.MONITOR_NAMESPACE
-				+ storename, Constants.MONITOR_COUNTER_ADDS, Count.class,
+		AbstractCounter c = Monitoring.create(
+				Constants.MONITOR_NAMESPACE + storename,
+				Constants.MONITOR_COUNTER_ADDS, Count.class,
 				AbstractCounter.Mode.DEBUG);
 		if (c != null) {
 			counters.put(Constants.MONITOR_COUNTER_ADDS,
@@ -301,8 +363,8 @@ public class MessageStoreManager implements Configurable {
 	 * @throws MessageQueueException
 	 *             , LockTimeoutException
 	 */
-	public void write(byte[] data, long timeout) throws MessageQueueException,
-			LockTimeoutException {
+	public void write(byte[] data, long timeout)
+			throws MessageQueueException, LockTimeoutException {
 		try {
 			ObjectState.check(state, EObjectState.Available, getClass());
 			if (qw_lock.tryLock(timeout, TimeUnit.MILLISECONDS)) {
@@ -368,8 +430,8 @@ public class MessageStoreManager implements Configurable {
 			throws MessageQueueException {
 		MessageBlock mb = blocks.find(blockid);
 		if (mb == null)
-			throw new MessageQueueException("Block [" + blockid
-					+ "] not found in block chain.");
+			throw new MessageQueueException(
+					"Block [" + blockid + "] not found in block chain.");
 		ReadResponse resp = mb.read(keys);
 		if (resp != null
 				&& resp.status() == ReadResponse.EReadResponseStatus.OK) {
@@ -396,8 +458,8 @@ public class MessageStoreManager implements Configurable {
 	 *             , LockTimeoutException
 	 */
 	public MessageDataBlock.MessageDataBlockList read(String subscriber,
-			int batch, long timeout) throws MessageQueueException,
-			LockTimeoutException {
+			int batch, long timeout)
+					throws MessageQueueException, LockTimeoutException {
 		MessageDataBlock.MessageDataBlockList data = read(subscriber, batch,
 				timeout, null);
 		if (data != null) {
@@ -410,7 +472,7 @@ public class MessageStoreManager implements Configurable {
 
 	private MessageDataBlock.MessageDataBlockList read(String subscriber,
 			int batch, long timeout, MessageDataBlock.MessageDataBlockList data)
-			throws MessageQueueException, LockTimeoutException {
+					throws MessageQueueException, LockTimeoutException {
 		try {
 			if (state.getState() == EObjectState.Initialized)
 				return null;
@@ -433,15 +495,13 @@ public class MessageStoreManager implements Configurable {
 				data = copy(data, records.data(), m.id());
 			}
 
-			if ((data == null || data.size() < batch)
-					&& records.status() == ReadResponse.EReadResponseStatus.EndOfBlock) {
+			if ((data == null || data.size() < batch) && records
+					.status() == ReadResponse.EReadResponseStatus.EndOfBlock) {
 				if (m.nextOfType(Constants.VALID_READ_STATES) != null) {
-					LogUtils.mesg(getClass(),
-							"Finished reading block [ID=" + m.id()
-									+ "][last index=" + m.index(subscriber)
-									+ "][state=" + m.state().name()
-									+ "][response=" + records.status().name()
-									+ "]");
+					LogUtils.mesg(getClass(), "Finished reading block [ID="
+							+ m.id() + "][last index=" + m.index(subscriber)
+							+ "][state=" + m.state().name() + "][response="
+							+ records.status().name() + "]");
 					blocks.lock().lock();
 					try {
 						MessageBlock n = blocksSubscribed.get(subscriber);
@@ -527,17 +587,19 @@ public class MessageStoreManager implements Configurable {
 								boolean ackpending = ackCache
 										.hasPendingAcks(ptr.id());
 								if (!ackpending) {
-									LogUtils.debug(getClass(), String.format(
-											"Adding block [%s:%s] for GC.",
-											ptr.id(), ptr.directory()));
+									LogUtils.debug(getClass(),
+											String.format(
+													"Adding block [%s:%s] for GC.",
+													ptr.id(), ptr.directory()));
 									forgc.add(ptr);
 								} else {
 									break;
 								}
 							} else {
-								LogUtils.debug(getClass(), String.format(
-										"Last available block [%s:%s] for GC.",
-										ptr.id(), ptr.directory()));
+								LogUtils.debug(getClass(),
+										String.format(
+												"Last available block [%s:%s] for GC.",
+												ptr.id(), ptr.directory()));
 								break;
 							}
 							ptr = ptr.nextOfType(Constants.VALID_GC_STATES);
@@ -590,7 +652,7 @@ public class MessageStoreManager implements Configurable {
 		try {
 			if (!messagedir.exists())
 				messagedir.mkdirs();
-			if (!recoverOnRestart) {
+			if (!mConfig.recoverOnRestart) {
 				FileUtils.emptydir(messagedir, false);
 			} else {
 				recover(cc);
@@ -614,8 +676,8 @@ public class MessageStoreManager implements Configurable {
 				// recoveryThreshold should be min(recoveryThreshold,
 				// files.length). Otherwise, even the write block (tail) will be
 				// marked as RO
-				recoveryThreshold = recoveryThreshold < files.length ? files.length
-						: recoveryThreshold;
+				mConfig.recoveryThreshold = mConfig.recoveryThreshold < files.length
+						? files.length : mConfig.recoveryThreshold;
 				Arrays.sort(files, new FileComparator());
 				int count = 0;
 				for (File f : files) {
@@ -626,21 +688,22 @@ public class MessageStoreManager implements Configurable {
 						// while recovering the MessageBlock and vice-versa.
 						MessageBlock b = new MessageBlock(bid,
 								messagedir.getAbsolutePath(), storename,
-								!recoverOnRestart, cc);
+								!mConfig.recoverOnRestart, cc);
 						b.init(true);
 						b.closewriter();
 						b.unload();
-						if (recoveryThreshold < 0 || count < recoveryThreshold) {
+						if (mConfig.recoveryThreshold < 0
+								|| count < mConfig.recoveryThreshold) {
 							log.warn(String.format(
-									"Recovering block [%s] : directory=%s",
-									bid, f.getAbsolutePath()));
+									"Recovering block [%s] : directory=%s", bid,
+									f.getAbsolutePath()));
 							blocks.add(b);
 						} else if (!disableExpiry) {
 							// create a new block and mark that block as a
 							// candidate for backup (GC)
-							log.warn(String
-									.format("Marking block [%s] : directory=%s for backup",
-											bid, f.getAbsolutePath()));
+							log.warn(String.format(
+									"Marking block [%s] : directory=%s for backup",
+									bid, f.getAbsolutePath()));
 							b.close();
 							// call backup
 							if (backup != null) {
@@ -695,16 +758,16 @@ public class MessageStoreManager implements Configurable {
 	}
 
 	private void configBackup(ConfigNode config) throws ConfigurationException {
-		ConfigPath cp = (ConfigPath) config;
-		ConfigNode cn = cp
-				.search(MessageBlockBackup.Constants.CONFIG_NODE_NAME);
+		ConfigNode cn = ConfigUtils.getConfigNode(config,
+				MessageBlockBackup.class, null);
 		if (cn == null)
 			return;
 		backup = new MessageBlockBackup(storename);
 		backup.configure(cn);
 	}
 
-	private void configRecycle(ConfigNode config) throws ConfigurationException {
+	private void configRecycle(ConfigNode config)
+			throws ConfigurationException {
 		try {
 			ConfigPath cp = (ConfigPath) config;
 			ConfigNode cn = cp
@@ -718,7 +781,8 @@ public class MessageStoreManager implements Configurable {
 						"Cannot find attribute. [attribute="
 								+ StaticConstants.CONFIG_ATTR_CLASS + "]");
 			String c = attr.attribute(StaticConstants.CONFIG_ATTR_CLASS);
-			LogUtils.debug(getClass(), "[Recycle Strategy : Class = " + c + "]");
+			LogUtils.debug(getClass(),
+					"[Recycle Strategy : Class = " + c + "]");
 			if (StringUtils.isEmpty(c))
 				throw new ConfigurationException("NULL/empty executor class.");
 			Class<?> cls = Class.forName(c);

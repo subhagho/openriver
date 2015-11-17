@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import com.wookler.server.common.Configurable;
 import com.wookler.server.common.LockTimeoutException;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.river.AckCacheStructs.MessageAckRecord;
 import com.wookler.server.river.AckCacheStructs.StructSubscriberConfig;
 
@@ -34,10 +35,9 @@ import com.wookler.server.river.AckCacheStructs.StructSubscriberConfig;
  * @created Jun 10, 2015:2:02:44 PM
  *
  */
+@CPath(path="ackCache")
 public abstract class AckCache<M> implements Configurable {
 	public static final class Constants {
-		public static final String CONFIG_NODE_NAME = "ackCache";
-
 		protected static final long LOCK_TIMEOUT = 1000;
 		private static final int DEFAULT_ACK_THROTTLE_SIZE = 100000;
 	}

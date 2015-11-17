@@ -3,7 +3,7 @@
 	<wookler>
 		<test>
 			<map-data-store name="testDS">
-				<partitions partitions.min="4" partitions.max="10">
+				<partition partitions.min="4" partitions.max="10">
 					<params>
 						<param name="directory.base" value="/tmp/wookler/test/mapDS" />
 						<param name="partition.fill.pct" value="70" />
@@ -11,7 +11,7 @@
 						<param name="size.key.avg" value="64" />
 						<param name="size.value.avg" value="4096" />
 					</params>
-				</partitions>
+				</partition>
 				<params>
 					<params name="serializer.key"
 						value="com.wookler.server.common.model.SerializerRegistry.UTF8StringSerializer" />

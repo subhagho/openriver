@@ -1,19 +1,14 @@
 /*
- *
- *  Copyright 2014 Subhabrata Ghosh
- *  
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *  http://www.apache.org/licenses/LICENSE-2.0
- *  
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Copyright 2014 Subhabrata Ghosh
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.wookler.river.map;
 
@@ -31,6 +26,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.wookler.river.map.MapDataStore.Constants;
+import com.wookler.river.map.MapDataStore.MapDataStoreConfig;
+import com.wookler.river.map.MapDataStore.PartitionDefinition;
 import com.wookler.server.common.config.Config;
 import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigParams;
@@ -48,12 +45,12 @@ import com.wookler.server.common.utils.LogUtils;
  *
  */
 public class Test_MapDataStore {
-	private static final String CONFIG_FILE = "src/test/resources/map-datastore-config.xml";
-	private static final String CONFIG_ROOT = "/configuration/wookler/test";
-	private static final String CONFIG_BASEDIR = "directory.base";
-	private static Config config;
-	private static final int CYCLE_COUNT = 1000000;
-	private static final MapDataStore<String, byte[]> mapDS = new MapDataStore<>(
+	private static final String							CONFIG_FILE		= "src/test/resources/map-datastore-config.xml";
+	private static final String							CONFIG_ROOT		= "/configuration/wookler/test";
+	private static final String							CONFIG_BASEDIR	= "directory.base";
+	private static Config								config;
+	private static final int							CYCLE_COUNT		= 1000000;
+	private static final MapDataStore<String, byte[]>	mapDS			= new MapDataStore<>(
 			String.class, byte[].class);
 
 	private static final String DATA = "If two ( or more nodes ) receive a change to their maps for "
@@ -88,17 +85,20 @@ public class Test_MapDataStore {
 		config = new Config(CONFIG_FILE, CONFIG_ROOT);
 		config.load();
 		ConfigPath root = (ConfigPath) config.node();
-		ConfigNode mapc = root.search(MapDataStore.Constants.CONFIG_NODE_NAME);
+		ConfigNode mapc = ConfigUtils.getConfigNode(root,
+				MapDataStore.class, null);
 		if (mapc == null)
 			throw new Exception("Map store configuration node not found.");
-		// TODO : temporary fix: empty the base dir before each run -- otherwise the test is dragging
-		ConfigNode pnode = ((ConfigPath) mapc)
-                .search(Constants.CONFIG_NODE_PARTITIONS);
-		ConfigParams params = ConfigUtils.params(pnode);
-		String dir = params.param(CONFIG_BASEDIR);
+		// TODO : temporary fix: empty the base dir before each run -- otherwise
+		// the test is dragging
+
+		PartitionDefinition pdef = new PartitionDefinition();
+
+		ConfigUtils.parse(mapc, pdef);
+		String dir = pdef.Directory.getAbsolutePath();
 		if (!StringUtils.isEmpty(dir)) {
-		    System.out.println("Cleaning up the base dir");
-		    FileUtils.emptydir(dir);
+			System.out.println("Cleaning up the base dir");
+			FileUtils.emptydir(dir);
 		}
 		mapDS.configure(mapc);
 	}
@@ -131,8 +131,8 @@ public class Test_MapDataStore {
 			HashMap<String, Integer> sizes = mapDS.getSizes();
 			if (sizes != null) {
 				for (String key : sizes.keySet()) {
-					System.out.println(String.format("ID : %s = %d", key,
-							sizes.get(key)));
+					System.out.println(
+							String.format("ID : %s = %d", key, sizes.get(key)));
 				}
 			}
 		} catch (Throwable t) {
@@ -162,8 +162,8 @@ public class Test_MapDataStore {
 			HashMap<String, Integer> sizes = mapDS.getSizes();
 			if (sizes != null) {
 				for (String key : sizes.keySet()) {
-					System.out.println(String.format("ID : %s = %d", key,
-							sizes.get(key)));
+					System.out.println(
+							String.format("ID : %s = %d", key, sizes.get(key)));
 				}
 			}
 			long ts = System.currentTimeMillis();
@@ -181,19 +181,17 @@ public class Test_MapDataStore {
 						if (parts != null && parts.length >= 2) {
 							String id = parts[0].trim();
 							if (id.compareTo(key) != 0) {
-								System.out
-										.println("Invalid data returned. [expected="
-												+ key
-												+ "][received="
-												+ id
+								System.out.println(
+										"Invalid data returned. [expected="
+												+ key + "][received=" + id
 												+ "]");
 							} else {
 								count++;
 							}
 						}
 					} else {
-						System.out.println("Null data returned for key [key="
-								+ key + "]");
+						System.out.println(
+								"Null data returned for key [key=" + key + "]");
 					}
 				}
 			}
@@ -236,8 +234,8 @@ public class Test_MapDataStore {
 			HashMap<String, Integer> sizes = mapDS.getSizes();
 			if (sizes != null) {
 				for (String key : sizes.keySet()) {
-					System.out.println(String.format("ID : %s = %d", key,
-							sizes.get(key)));
+					System.out.println(
+							String.format("ID : %s = %d", key, sizes.get(key)));
 				}
 			}
 			long ts = System.currentTimeMillis();

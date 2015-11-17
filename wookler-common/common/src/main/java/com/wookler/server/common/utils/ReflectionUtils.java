@@ -12,6 +12,7 @@
  */
 package com.wookler.server.common.utils;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -85,7 +86,7 @@ public class ReflectionUtils {
 				m = MethodUtils.getAccessibleMethod(o.getClass(), method);
 			}
 		}
-		
+
 		if (m == null)
 			throw new Exception("No accessable method found for field. [field="
 					+ field.getName() + "][class="
@@ -139,6 +140,12 @@ public class ReflectionUtils {
 				Class<Enum> et = (Class<Enum>) type;
 				Object ev = Enum.valueOf(et, value);
 				ReflectionUtils.setObjectValue(source, f, ev);
+			} else if (type.equals(File.class)) {
+				File file = new File(value);
+				ReflectionUtils.setObjectValue(source, f, file);
+			} else if (type.equals(Class.class)) {
+				Class<?> cls = Class.forName(value);
+				ReflectionUtils.setObjectValue(source, f, cls);
 			}
 		} catch (Exception e) {
 			throw new ConfigurationException(

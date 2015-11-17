@@ -467,11 +467,13 @@ public class MapDataStore<K, V> implements Configurable {
 		try {
 			if (state.getState() != EObjectState.Exception)
 				state.setState(EObjectState.Disposed);
-			for (String k : partitions.keySet()) {
-				partitions.get(k).dispose();
+			if (partitions != null) {
+				for (String k : partitions.keySet()) {
+					partitions.get(k).dispose();
+				}
+				partitions.clear();
+				partitions = null;
 			}
-			partitions.clear();
-			partitions = null;
 			rHashIndex = null;
 		} finally {
 			pLock.writeLock().unlock();

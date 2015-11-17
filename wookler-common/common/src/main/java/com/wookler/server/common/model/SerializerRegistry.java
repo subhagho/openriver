@@ -9,7 +9,6 @@ import com.wookler.server.common.utils.LogUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -21,92 +20,16 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by Subho on 2/20/2015.
  */
 public class SerializerRegistry implements Configurable {
-	public static final class ByteSerializer implements Serializer<byte[]> {
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * com.wookler.server.common.model.Serializer#serialize(java.lang.Object
-		 * )
-		 */
-		@Override
-		public byte[] serialize(byte[] data) throws IOException {
-			return data;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see com.wookler.server.common.model.Serializer#deserialize(byte[])
-		 */
-		@Override
-		public byte[] deserialize(byte[] data) throws IOException {
-			return data;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * com.wookler.server.common.model.Serializer#accept(java.lang.Class)
-		 */
-		@Override
-		public boolean accept(Class<?> type) {
-			if (type.equals(byte[].class)) {
-				return true;
-			}
-			return false;
-		}
-
-	}
-
-	public static final class UTF8StringSerializer implements
-			Serializer<String> {
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * com.wookler.server.common.model.Serializer#serialize(java.lang.Object
-		 * )
-		 */
-		@Override
-		public byte[] serialize(String data) throws IOException {
-			return data.getBytes("UTF-8");
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see com.wookler.server.common.model.Serializer#deserialize(byte[])
-		 */
-		@Override
-		public String deserialize(byte[] data) throws IOException {
-			return new String(data, "UTF-8");
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * com.wookler.server.common.model.Serializer#accept(java.lang.Class)
-		 */
-		@Override
-		public boolean accept(Class<?> type) {
-			return type.equals(String.class);
-		}
-	}
 
 	public static final class Constants {
-		public static final String CONFIG_NODE_ROOT = "serializers";
-		public static final String CONFIG_NODE_NAME = "serializer";
-		public static final String CONFIG_ATTR_CLASS = "class";
-		public static final String CONFIG_ATTR_IMPL = "handler";
+		public static final String	CONFIG_NODE_ROOT	= "serializers";
+		public static final String	CONFIG_NODE_NAME	= "serializer";
+		public static final String	CONFIG_ATTR_CLASS	= "class";
+		public static final String	CONFIG_ATTR_IMPL	= "handler";
 	}
 
-	private HashMap<Class<?>, Serializer<?>> serializers = new HashMap<>();
-	private ReentrantLock registryLock = new ReentrantLock();
+	private HashMap<Class<?>, Serializer<?>>	serializers		= new HashMap<>();
+	private ReentrantLock						registryLock	= new ReentrantLock();
 
 	public SerializerRegistry() {
 		// Default serializer for byte array. Does nothing.
@@ -199,7 +122,8 @@ public class SerializerRegistry implements Configurable {
 	 *
 	 * @param config
 	 *            - Configuration node for this instance.
-	 * @throws - Configuration Exception
+	 * @throws -
+	 *             Configuration Exception
 	 */
 	@Override
 	public void configure(ConfigNode config) throws ConfigurationException {
@@ -223,8 +147,8 @@ public class SerializerRegistry implements Configurable {
 			} else {
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
 			}
 		} catch (ConfigurationException e) {
 			LogUtils.stacktrace(getClass(), e);
@@ -238,8 +162,8 @@ public class SerializerRegistry implements Configurable {
 			if (!(node instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), node.getClass()
-								.getCanonicalName()));
+						ConfigPath.class.getCanonicalName(),
+						node.getClass().getCanonicalName()));
 			ConfigAttributes attrs = ConfigUtils.attributes(node);
 			String type = attrs.attribute(Constants.CONFIG_ATTR_CLASS);
 			if (StringUtils.isEmpty(type)) {
@@ -260,10 +184,9 @@ public class SerializerRegistry implements Configurable {
 								+ scls.getCanonicalName() + "]");
 			Serializer<?> serializer = (Serializer<?>) o;
 			if (!serializer.accept(cls)) {
-				throw new ConfigurationException(
-						String.format(
-								"Invalid Serializer being registered. Serializer [%s] does not handle type [%s]",
-								scls.getCanonicalName(), cls.getCanonicalName()));
+				throw new ConfigurationException(String.format(
+						"Invalid Serializer being registered. Serializer [%s] does not handle type [%s]",
+						scls.getCanonicalName(), cls.getCanonicalName()));
 			}
 			serializers.put(cls, serializer);
 		} catch (DataNotFoundException e) {
@@ -295,10 +218,11 @@ public class SerializerRegistry implements Configurable {
 	public static final SerializerRegistry get() {
 		return REGISTRY;
 	}
-	
-	public static final SerializerRegistry init(ConfigNode config) throws ConfigurationException {
+
+	public static final SerializerRegistry init(ConfigNode config)
+			throws ConfigurationException {
 		REGISTRY.configure(config);
-		
+
 		return REGISTRY;
 	}
 }

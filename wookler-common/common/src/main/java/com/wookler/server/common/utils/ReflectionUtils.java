@@ -130,6 +130,7 @@ public class ReflectionUtils {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static final void setValueFromString(String value, Object source,
 			Field f) throws ConfigurationException {
+		Preconditions.checkArgument(!StringUtils.isEmpty(value));
 		try {
 			Class<?> type = f.getType();
 			if (ReflectionUtils.isPrimitiveTypeOrClass(f)) {
@@ -144,7 +145,7 @@ public class ReflectionUtils {
 				File file = new File(value);
 				ReflectionUtils.setObjectValue(source, f, file);
 			} else if (type.equals(Class.class)) {
-				Class<?> cls = Class.forName(value);
+				Class<?> cls = Class.forName(value.trim());
 				ReflectionUtils.setObjectValue(source, f, cls);
 			}
 		} catch (Exception e) {

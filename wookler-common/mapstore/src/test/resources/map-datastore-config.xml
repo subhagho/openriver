@@ -13,10 +13,10 @@
 					</params>
 				</partition>
 				<params>
-					<params name="serializer.key"
-						value="com.wookler.server.common.model.SerializerRegistry.UTF8StringSerializer" />
-					<params name="serializer.key"
-						value="com.wookler.server.common.model.SerializerRegistry.ByteSerializer" />
+					<param name="serializer.key"
+						value="com.wookler.server.common.model.UTF8StringSerializer" />
+					<param name="serializer.value"
+						value="com.wookler.server.common.model.ByteSerializer" />
 				</params>
 			</map-data-store>
 		</test>

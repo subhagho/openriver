@@ -25,12 +25,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.wookler.river.map.MapDataStore.Constants;
-import com.wookler.river.map.MapDataStore.MapDataStoreConfig;
 import com.wookler.river.map.MapDataStore.PartitionDefinition;
 import com.wookler.server.common.config.Config;
 import com.wookler.server.common.config.ConfigNode;
-import com.wookler.server.common.config.ConfigParams;
 import com.wookler.server.common.config.ConfigPath;
 import com.wookler.server.common.config.ConfigUtils;
 import com.wookler.server.common.utils.FileUtils;
@@ -45,12 +42,11 @@ import com.wookler.server.common.utils.LogUtils;
  *
  */
 public class Test_MapDataStore {
-	private static final String							CONFIG_FILE		= "src/test/resources/map-datastore-config.xml";
-	private static final String							CONFIG_ROOT		= "/configuration/wookler/test";
-	private static final String							CONFIG_BASEDIR	= "directory.base";
+	private static final String							CONFIG_FILE	= "src/test/resources/map-datastore-config.xml";
+	private static final String							CONFIG_ROOT	= "/configuration/wookler/test";
 	private static Config								config;
-	private static final int							CYCLE_COUNT		= 1000000;
-	private static final MapDataStore<String, byte[]>	mapDS			= new MapDataStore<>(
+	private static final int							CYCLE_COUNT	= 100000;
+	private static final MapDataStore<String, byte[]>	mapDS		= new MapDataStore<>(
 			String.class, byte[].class);
 
 	private static final String DATA = "If two ( or more nodes ) receive a change to their maps for "
@@ -85,8 +81,8 @@ public class Test_MapDataStore {
 		config = new Config(CONFIG_FILE, CONFIG_ROOT);
 		config.load();
 		ConfigPath root = (ConfigPath) config.node();
-		ConfigNode mapc = ConfigUtils.getConfigNode(root,
-				MapDataStore.class, null);
+		ConfigNode mapc = ConfigUtils.getConfigNode(root, MapDataStore.class,
+				null);
 		if (mapc == null)
 			throw new Exception("Map store configuration node not found.");
 		// TODO : temporary fix: empty the base dir before each run -- otherwise

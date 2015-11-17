@@ -1,19 +1,17 @@
 /*
- *
- *  * Copyright 2014 Subhabrata Ghosh
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
+ * * Copyright 2014 Subhabrata Ghosh
+ * *
+ * * Licensed under the Apache License, Version 2.0 (the "License");
+ * * you may not use this file except in compliance with the License.
+ * * You may obtain a copy of the License at
+ * *
+ * * http://www.apache.org/licenses/LICENSE-2.0
+ * *
+ * * Unless required by applicable law or agreed to in writing, software
+ * * distributed under the License is distributed on an "AS IS" BASIS,
+ * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * * See the License for the specific language governing permissions and
+ * * limitations under the License.
  */
 
 package com.wookler.server.common;
@@ -50,10 +48,81 @@ public class Monitor implements Configurable {
 	 * Class encapsulates constants defined.
 	 */
 	public static final class Constants {
-		public static final String CONFIG_CLASS = "class";
-		public static final String CONFIG_MONITOR_WINDOW = "monitor.window.recycle";
-		public static final String CONFIG_MONITOR_FREQUENCY = "monitor.frequency.write";
-		public static final String CONFIG_APP_NAME = "app.name";
+		public static final String	DEFAULT_RECYCLE_WINDOW	= "24hh";
+		public static final String	DEFAULT_WRITE_FREQUENCY	= "5mm";
+	}
+
+	@CPath(path = "env.monitor")
+	public static final class MonitorConfig {
+		@CParam(name = "@class")
+		private String	classname;
+		@CParam(name = "app.name")
+		private String	appname;
+		@CParam(name = "monitor.window.recycle")
+		private String	window		= Constants.DEFAULT_RECYCLE_WINDOW;
+		@CParam(name = "monitor.frequency.write")
+		private String	frequency	= Constants.DEFAULT_WRITE_FREQUENCY;
+
+		/**
+		 * @return the classname
+		 */
+		public String getClassname() {
+			return classname;
+		}
+
+		/**
+		 * @param classname
+		 *            the classname to set
+		 */
+		public void setClassname(String classname) {
+			this.classname = classname;
+		}
+
+		/**
+		 * @return the appname
+		 */
+		public String getAppname() {
+			return appname;
+		}
+
+		/**
+		 * @param appname
+		 *            the appname to set
+		 */
+		public void setAppname(String appname) {
+			this.appname = appname;
+		}
+
+		/**
+		 * @return the window
+		 */
+		public String getWindow() {
+			return window;
+		}
+
+		/**
+		 * @param window
+		 *            the window to set
+		 */
+		public void setWindow(String window) {
+			this.window = window;
+		}
+
+		/**
+		 * @return the frequency
+		 */
+		public String getFrequency() {
+			return frequency;
+		}
+
+		/**
+		 * @param frequency
+		 *            the frequency to set
+		 */
+		public void setFrequency(String frequency) {
+			this.frequency = frequency;
+		}
+
 	}
 
 	/**
@@ -75,20 +144,20 @@ public class Monitor implements Configurable {
 
 	private static final long _LOCK_TIMEOUT_ = 1;
 
-	private ProcessState state = new ProcessState();
-	private AppInfo info = new AppInfo();
-	private TimeWindow window = null;
-	private TimeWindow frequency = null;
-	private ThreadMXBean threadMXBean;
+	private ProcessState	state		= new ProcessState();
+	private AppInfo			info		= new AppInfo();
+	private TimeWindow		window		= null;
+	private TimeWindow		frequency	= null;
+	private ThreadMXBean	threadMXBean;
 
-	private HashMap<Long, MonitoredThread> threads = new HashMap<Long, MonitoredThread>();
-	private HashMap<String, AbstractCounter> globalCounters = new HashMap<String, AbstractCounter>();
+	private HashMap<Long, MonitoredThread>		threads			= new HashMap<Long, MonitoredThread>();
+	private HashMap<String, AbstractCounter>	globalCounters	= new HashMap<String, AbstractCounter>();
 
-	private ReentrantLock threadLock = new ReentrantLock();
-	private ReentrantLock counterLock = new ReentrantLock();
-	private HeartbeatLogger hlog;
-	private CounterLogger clog;
-	private Runner runner = new Runner();
+	private ReentrantLock	threadLock	= new ReentrantLock();
+	private ReentrantLock	counterLock	= new ReentrantLock();
+	private HeartbeatLogger	hlog;
+	private CounterLogger	clog;
+	private Runner			runner		= new Runner();
 
 	/**
 	 * Configure the monitor thread. Sample:
@@ -98,8 +167,10 @@ public class Monitor implements Configurable {
 	 *     <monitor>
 	 *         <params>
 	 *             <param name="app.name" value="[APP NAME]"/>
-	 *             <param name="monitor.window.recycle" value="[Counter Recycle Window]"/>
-	 *             <param name="monitor.frequency.write" value="[Metrics Write Frequency]"/>
+	 *             
+	<param name="monitor.window.recycle" value="[Counter Recycle Window]"/>
+	 *             
+	<param name="monitor.frequency.write" value="[Metrics Write Frequency]"/>
 	 *         </params>
 	 *         <counter class="[Counter Logger Class]">...</counter>
 	 *         <heartbeat class="[Heartbeat Logger Class]]>...</heartbeat>
@@ -117,19 +188,12 @@ public class Monitor implements Configurable {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
-			ConfigParams cp = ConfigUtils.params(config);
-			HashMap<String, String> params = cp.params();
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
+			MonitorConfig mc = new MonitorConfig();
+			ConfigUtils.parse(config, mc);
 
-			String s = params.get(Constants.CONFIG_APP_NAME);
-			if (StringUtils.isEmpty(s)) {
-				throw new ConfigurationException(
-						"Missing configuration parameter. [name="
-								+ Constants.CONFIG_APP_NAME + "]");
-			}
-
-			info.app(s).starttime(System.currentTimeMillis());
+			info.app(mc.appname).starttime(System.currentTimeMillis());
 			try {
 
 				InetAddress addr = NetUtils.getIpAddress();
@@ -149,24 +213,10 @@ public class Monitor implements Configurable {
 			}
 			debug(getClass(), info.toString());
 
-			s = params.get(Constants.CONFIG_MONITOR_WINDOW);
-			if (!StringUtils.isEmpty(s)) {
-				window = TimeWindow.parse(s.trim());
-			} else {
-				window = new TimeWindow();
-				window.granularity(TimeUnit.HOURS);
-				window.resolution(24);
-			}
+			window = TimeWindow.parse(mc.window.trim());
 			debug(getClass(), window.toString());
 
-			s = params.get(Constants.CONFIG_MONITOR_FREQUENCY);
-			if (!StringUtils.isEmpty(s)) {
-				frequency = TimeWindow.parse(s.trim());
-			} else {
-				frequency = new TimeWindow();
-				frequency.granularity(TimeUnit.MINUTES);
-				frequency.resolution(5);
-			}
+			frequency = TimeWindow.parse(mc.frequency.trim());
 			debug(getClass(), frequency.toString());
 
 			configureCounter(config);
@@ -183,26 +233,23 @@ public class Monitor implements Configurable {
 		} catch (TimeWindowException twe) {
 			exception(twe);
 			throw new ConfigurationException(twe.getLocalizedMessage(), twe);
-		} catch (DataNotFoundException twe) {
-			exception(twe);
-			throw new ConfigurationException(twe.getLocalizedMessage(), twe);
 		}
 	}
 
 	private void configureCounter(ConfigNode config)
 			throws ConfigurationException {
 		try {
-			ConfigPath cp = (ConfigPath) config;
-			ConfigNode cn = cp.search(CounterLogger.Constants.CONFIG_NODE_NAME);
+			ConfigNode cn = ConfigUtils.getConfigNode(config,
+					CounterLogger.class, null);
 			if (cn == null)
 				throw new DataNotFoundException("Cannot find node. [node="
-						+ CounterLogger.Constants.CONFIG_NODE_NAME + "]");
+						+ ConfigUtils.getConfigPath(CounterLogger.class) + "]");
 			ConfigAttributes attr = ConfigUtils.attributes(cn);
-			if (!attr.contains(Constants.CONFIG_CLASS))
+			if (!attr.contains(GlobalConstants.CONFIG_ATTR_CLASS))
 				throw new DataNotFoundException(
 						"Cannot find attribute. [attribute="
-								+ Constants.CONFIG_CLASS + "]");
-			String c = attr.attribute(Constants.CONFIG_CLASS);
+								+ GlobalConstants.CONFIG_ATTR_CLASS + "]");
+			String c = attr.attribute(GlobalConstants.CONFIG_ATTR_CLASS);
 			LogUtils.debug(getClass(), "[Executor Class = " + c + "]");
 			if (StringUtils.isEmpty(c))
 				throw new ConfigurationException("NULL/empty executor class.");
@@ -217,8 +264,8 @@ public class Monitor implements Configurable {
 								+ cls.getCanonicalName() + "]");
 			}
 			clog.configure(cn);
-			debug(getClass(), "Counter Logger: "
-					+ clog.getClass().getCanonicalName());
+			debug(getClass(),
+					"Counter Logger: " + clog.getClass().getCanonicalName());
 
 		} catch (DataNotFoundException e) {
 			throw new ConfigurationException(
@@ -236,18 +283,18 @@ public class Monitor implements Configurable {
 	private void configureHeartbeat(ConfigNode config)
 			throws ConfigurationException {
 		try {
-			ConfigPath cp = (ConfigPath) config;
-			ConfigNode cn = cp
-					.search(HeartbeatLogger.Constants.CONFIG_NODE_NAME);
+			ConfigNode cn = ConfigUtils.getConfigNode(config,
+					HeartbeatLogger.class, null);
 			if (cn == null)
 				throw new DataNotFoundException("Cannot find node. [node="
-						+ HeartbeatLogger.Constants.CONFIG_NODE_NAME + "]");
+						+ ConfigUtils.getConfigPath(HeartbeatLogger.class)
+						+ "]");
 			ConfigAttributes attr = ConfigUtils.attributes(cn);
-			if (!attr.contains(Constants.CONFIG_CLASS))
+			if (!attr.contains(GlobalConstants.CONFIG_ATTR_CLASS))
 				throw new DataNotFoundException(
 						"Cannot find attribute. [attribute="
-								+ Constants.CONFIG_CLASS + "]");
-			String c = attr.attribute(Constants.CONFIG_CLASS);
+								+ GlobalConstants.CONFIG_ATTR_CLASS + "]");
+			String c = attr.attribute(GlobalConstants.CONFIG_ATTR_CLASS);
 			LogUtils.debug(getClass(), "[Executor Class = " + c + "]");
 			if (StringUtils.isEmpty(c))
 				throw new ConfigurationException("NULL/empty executor class.");
@@ -262,8 +309,8 @@ public class Monitor implements Configurable {
 								+ cls.getCanonicalName() + "]");
 			}
 			hlog.configure(cn);
-			debug(getClass(), "Heartbeat Logger: "
-					+ hlog.getClass().getCanonicalName());
+			debug(getClass(),
+					"Heartbeat Logger: " + hlog.getClass().getCanonicalName());
 
 		} catch (DataNotFoundException e) {
 			throw new ConfigurationException(
@@ -500,7 +547,8 @@ public class Monitor implements Configurable {
 	private void writeHearbeats() {
 		try {
 			if (threads != null && !threads.isEmpty()) {
-				List<Heartbeat> beats = new ArrayList<Heartbeat>(threads.size());
+				List<Heartbeat> beats = new ArrayList<Heartbeat>(
+						threads.size());
 				for (long id : threads.keySet()) {
 					MonitoredThread mt = threads.get(id);
 					Heartbeat hb = threadHeartbeat(mt);
@@ -598,8 +646,8 @@ public class Monitor implements Configurable {
 	 * Managed task instance for publishing monitored metrics.
 	 */
 	private static final class Runner implements ManagedTask {
-		private long lastrun = System.currentTimeMillis();
-		private TaskState state = new TaskState();
+		private long		lastrun	= System.currentTimeMillis();
+		private TaskState	state	= new TaskState();
 
 		/**
 		 * Get the name of this managed task.
@@ -648,8 +696,8 @@ public class Monitor implements Configurable {
 					try {
 						MONITOR.run();
 					} catch (MonitorException e) {
-						return new TaskState().state(
-								TaskState.ETaskState.Failed).error(e);
+						return new TaskState()
+								.state(TaskState.ETaskState.Failed).error(e);
 					}
 					return new TaskState().state(TaskState.ETaskState.Success);
 				}

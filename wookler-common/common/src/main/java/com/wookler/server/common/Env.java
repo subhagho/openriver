@@ -1,12 +1,9 @@
 /*
  * Copyright [2014] Subhabrata Ghosh
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,20 +36,18 @@ import org.slf4j.LoggerFactory;
 public class Env {
 	public static final class Constants {
 		public static final String CONFIG_PATH_ENV = "configuration.env";
-		public static final String CONFIG_PATH_MONITOR = "configuration.env.monitor";
-		public static final String CONFIG_PATH_TASKMGR = "configuration.env.task-manager";
 
-		public static final String CONFIG_PARAM_ENCODING = "default.encoding";
-		private static final String DEFAULT_ENCODING = "UTF-8";
+		public static final String	CONFIG_PARAM_ENCODING	= "default.encoding";
+		private static final String	DEFAULT_ENCODING		= "UTF-8";
 	}
 
 	private static final Logger log = LoggerFactory.getLogger(Env.class);
 
-	private TaskManager taskmanager = new TaskManager();
-	private Config config;
-	private SystemStartupLock startupLock = new SystemStartupLock();
-	protected ObjectState state = new ObjectState();
-	protected ConfigNode envConfig;
+	private TaskManager			taskmanager	= new TaskManager();
+	private Config				config;
+	private SystemStartupLock	startupLock	= new SystemStartupLock();
+	protected ObjectState		state		= new ObjectState();
+	protected ConfigNode		envConfig;
 
 	private Charset encoding = Charset.forName(Constants.DEFAULT_ENCODING);
 
@@ -110,18 +105,14 @@ public class Env {
 	}
 
 	private void configMonitor() throws Exception {
-		ConfigNode node = config.search(Constants.CONFIG_PATH_MONITOR);
-		if (node == null)
-			throw new Exception("Cannot find monitor node. [path="
-					+ Constants.CONFIG_PATH_MONITOR + "]");
+		ConfigNode node = ConfigUtils.getConfigNode(config.node(),
+				Monitor.MonitorConfig.class, null);
 		Monitor.create(node);
 	}
 
 	private void configTaskManager() throws Exception {
-		ConfigNode node = config.search(Constants.CONFIG_PATH_TASKMGR);
-		if (node == null)
-			throw new Exception("Cannot find task-manager node. [path="
-					+ Constants.CONFIG_PATH_TASKMGR + "]");
+		ConfigNode node = ConfigUtils.getConfigNode(config.node(),
+				TaskManager.class, null);
 		taskmanager = new TaskManager();
 		taskmanager.configure(node);
 		taskmanager.start();

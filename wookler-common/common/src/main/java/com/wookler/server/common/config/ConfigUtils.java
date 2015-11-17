@@ -203,9 +203,21 @@ public class ConfigUtils {
 		return (name.indexOf('@') > 0);
 	}
 
+	public static final String getConfigPath(Class<?> type) {
+		if (type.isAnnotationPresent(CPath.class)) {
+			return type.getAnnotation(CPath.class).path();
+		}
+		return null;
+	}
+
 	public static final ConfigNode parse(ConfigNode node, Object source)
 			throws ConfigurationException {
-		node = getConfigNode(node, source);
+		return parse(node, source, null);
+	}
+
+	public static final ConfigNode parse(ConfigNode node, Object source,
+			String path) throws ConfigurationException {
+		node = getConfigNode(node, source.getClass(), path);
 		if (node == null)
 			throw new ConfigurationException(
 					"Error finding configuration node for type.");
@@ -253,20 +265,20 @@ public class ConfigUtils {
 		}
 	}
 
-	public static final ConfigNode getConfigNode(ConfigNode node, Object source)
-			throws ConfigurationException {
-		Class<?> type = source.getClass();
-		if (type.isAnnotationPresent(CPath.class)) {
+	public static final ConfigNode getConfigNode(ConfigNode node, Class<?> type,
+			String path) throws ConfigurationException {
+		if (StringUtils.isEmpty(path)
+				&& type.isAnnotationPresent(CPath.class)) {
 			CPath cp = type.getAnnotation(CPath.class);
-			String path = cp.path();
-			if (!StringUtils.isEmpty(path)) {
-				if (!(node instanceof ConfigPath))
-					throw new ConfigurationException(
-							"Invalid configuration node type. Expected path node. [path="
-									+ node.getAbsolutePath() + "]");
-				ConfigPath pp = (ConfigPath) node;
-				node = pp.search(path);
-			}
+			path = cp.path();
+		}
+		if (!StringUtils.isEmpty(path)) {
+			if (!(node instanceof ConfigPath))
+				throw new ConfigurationException(
+						"Invalid configuration node type. Expected path node. [path="
+								+ node.getAbsolutePath() + "]");
+			ConfigPath pp = (ConfigPath) node;
+			node = pp.search(path);
 		}
 		return node;
 	}

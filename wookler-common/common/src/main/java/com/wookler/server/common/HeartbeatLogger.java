@@ -21,17 +21,16 @@ package com.wookler.server.common;
 import java.text.ParseException;
 import java.util.List;
 
+import com.wookler.server.common.config.CPath;
+
 /**
  * Logging interface for recording thread Heartbeats.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 08/08/14
  */
+@CPath(path="heartbeat")
 public interface HeartbeatLogger extends Configurable {
-    public static final class Constants {
-        public static final String CONFIG_NODE_NAME = "heartbeat";
-    }
-
     /**
      * Log the specified list of heartbeats.
      *

@@ -52,31 +52,14 @@ public class Monitor implements Configurable {
 		public static final String	DEFAULT_WRITE_FREQUENCY	= "5mm";
 	}
 
-	@CPath(path = "env.monitor")
+	@CPath(path = "monitor")
 	public static final class MonitorConfig {
-		@CParam(name = "@class")
-		private String	classname;
 		@CParam(name = "app.name")
 		private String	appname;
 		@CParam(name = "monitor.window.recycle")
 		private String	window		= Constants.DEFAULT_RECYCLE_WINDOW;
 		@CParam(name = "monitor.frequency.write")
 		private String	frequency	= Constants.DEFAULT_WRITE_FREQUENCY;
-
-		/**
-		 * @return the classname
-		 */
-		public String getClassname() {
-			return classname;
-		}
-
-		/**
-		 * @param classname
-		 *            the classname to set
-		 */
-		public void setClassname(String classname) {
-			this.classname = classname;
-		}
 
 		/**
 		 * @return the appname

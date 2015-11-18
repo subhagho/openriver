@@ -1,5 +1,21 @@
 <?xml version="1.0"?>
 <configuration>
+	<env>
+		<monitor>
+			<params>
+				<param name="app.name" value="TEST-RIVER" />
+				<param name="monitor.window.recycle" value="10ss" />
+				<param name="monitor.frequency.write" value="1mm" />
+			</params>
+			<counter class="com.wookler.server.common.counter.LogCounterLogger" />
+			<heartbeat class="com.wookler.server.common.counter.LogHeartbeatLogger" />
+		</monitor>
+		<task-manager name="TEST-RIVER-TM">
+			<params>
+				<param name="executor.pool.size" value="1" />
+			</params>
+		</task-manager>
+	</env>
 	<river>
 		<test>
 			<auto class="com.wookler.server.common.config.TestAuto"
@@ -10,5 +26,20 @@
 				</params>
 			</auto>
 		</test>
+		<recycled-file backup="true"
+			strategy="com.wookler.server.common.utils.FileSizeRecycleStrategy">
+			<recycleStrategy>
+				<params>
+					<param name="size" value="10000" />
+				</params>
+			</recycleStrategy>
+			<backup>
+				<params>
+					<param name="backup.directory" value="/tmp/test/recycle/backup" />
+					<param name="backup.count" value="3" />
+					<param name="backup.compress" value="true" />
+				</params>
+			</backup>
+		</recycled-file>
 	</river>
 </configuration>

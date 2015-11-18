@@ -54,6 +54,36 @@ public class TaskManager implements Configurable, Runnable {
 	private int						executorPoolSize;
 
 	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name
+	 *            the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * @return the executorPoolSize
+	 */
+	public int getExecutorPoolSize() {
+		return executorPoolSize;
+	}
+
+	/**
+	 * @param executorPoolSize
+	 *            the executorPoolSize to set
+	 */
+	public void setExecutorPoolSize(int executorPoolSize) {
+		this.executorPoolSize = executorPoolSize;
+	}
+
+	/**
 	 * Configure this instance of the task manager. Sample:
 	 * 
 	 * <pre>

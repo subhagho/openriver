@@ -1,19 +1,17 @@
 /*
- *
- *  * Copyright 2014 Subhabrata Ghosh
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
+ * * Copyright 2014 Subhabrata Ghosh
+ * *
+ * * Licensed under the Apache License, Version 2.0 (the "License");
+ * * you may not use this file except in compliance with the License.
+ * * You may obtain a copy of the License at
+ * *
+ * * http://www.apache.org/licenses/LICENSE-2.0
+ * *
+ * * Unless required by applicable law or agreed to in writing, software
+ * * distributed under the License is distributed on an "AS IS" BASIS,
+ * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * * See the License for the specific language governing permissions and
+ * * limitations under the License.
  */
 
 package com.wookler.server.river;
@@ -23,7 +21,6 @@ import com.wookler.server.common.config.*;
 import com.wookler.server.common.utils.LogUtils;
 import com.wookler.server.common.utils.Monitoring;
 import com.wookler.server.river.AckCacheStructs.MessageAckRecord;
-
 
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -47,8 +44,8 @@ public class MessageQueue<M> implements Queue<M> {
 			.getLogger(MessageQueue.class);
 
 	public static class Constants {
-		public static final String CONFIG_TIMEOUT = "queue.lock.timeout";
-		public static final String CONFIG_MESSAGE_CONVERTER = "queue.message.converter";
+		public static final String	CONFIG_TIMEOUT				= "queue.lock.timeout";
+		public static final String	CONFIG_MESSAGE_CONVERTER	= "queue.message.converter";
 
 		public static final String ENV_MGMNT_THREAD_SLEEP = "queue.management.sleep";
 
@@ -58,20 +55,20 @@ public class MessageQueue<M> implements Queue<M> {
 		// secs.
 	}
 
-	protected ObjectState state = new ObjectState();
-	protected ByteConvertor<M> convertor;
-	protected long timeout = 100;
-	protected long mgmntSleepIntrvl = Constants.SLEEP_MGMNT_THREAD;
-	protected HashMap<String, Subscriber<M>> subscribers = new HashMap<String, Subscriber<M>>();
-	protected ReentrantReadWriteLock s_lock = new ReentrantReadWriteLock();
-	protected Runner runner;
-	protected String name;
-	protected boolean disableExpiry = false;
+	protected ObjectState						state				= new ObjectState();
+	protected ByteConvertor<M>					convertor;
+	protected long								timeout				= 100;
+	protected long								mgmntSleepIntrvl	= Constants.SLEEP_MGMNT_THREAD;
+	protected HashMap<String, Subscriber<M>>	subscribers			= new HashMap<String, Subscriber<M>>();
+	protected ReentrantReadWriteLock			s_lock				= new ReentrantReadWriteLock();
+	protected Runner							runner;
+	protected String							name;
+	protected boolean							disableExpiry		= false;
 
-	private MessageStoreManager store;
-	private HashMap<String, String[]> counters = new HashMap<String, String[]>();
-	private AtomicLong sequence = new AtomicLong();
-	private AckCache<M> ackCache = null;
+	private MessageStoreManager			store;
+	private HashMap<String, String[]>	counters	= new HashMap<String, String[]>();
+	private AtomicLong					sequence	= new AtomicLong();
+	private AckCache<M>					ackCache	= null;
 
 	/**
 	 * Enable/Disable message block expiry.
@@ -164,7 +161,8 @@ public class MessageQueue<M> implements Queue<M> {
 
 			store.start();
 
-			runner = new Runner(this, String.format("MESSAGE-QUEUE-%s", name()));
+			runner = new Runner(this,
+					String.format("MESSAGE-QUEUE-%s", name()));
 			Env.get().taskmanager().addtask(runner);
 
 			for (String key : subscribers.keySet()) {
@@ -216,8 +214,8 @@ public class MessageQueue<M> implements Queue<M> {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
 			ConfigAttributes attr = ConfigUtils.attributes(config);
 			name = attr.attribute(Queue.Constants.CONFIG_ATTR_NAME);
 			if (StringUtils.isEmpty(name))
@@ -244,9 +242,11 @@ public class MessageQueue<M> implements Queue<M> {
 						"Invalid converter class specified. [class="
 								+ cls.getCanonicalName() + "]");
 			convertor = (ByteConvertor<M>) o;
-			LogUtils.debug(getClass(), String.format(
-					"Registered message byte converter. [type=%s]", convertor
-							.getClass().getCanonicalName()), log);
+			LogUtils.debug(getClass(),
+					String.format(
+							"Registered message byte converter. [type=%s]",
+							convertor.getClass().getCanonicalName()),
+					log);
 
 			ackCache = new BlockingAckCache<>();
 			ackCache.setQueue(this);
@@ -273,7 +273,8 @@ public class MessageQueue<M> implements Queue<M> {
 			throw e;
 		} catch (DataNotFoundException e) {
 			exception(e);
-			throw new ConfigurationException("Configuration node not found.", e);
+			throw new ConfigurationException("Configuration node not found.",
+					e);
 		} catch (ClassNotFoundException e) {
 			exception(e);
 			throw new ConfigurationException("Invalid class specified.", e);
@@ -283,7 +284,7 @@ public class MessageQueue<M> implements Queue<M> {
 		} catch (IllegalAccessException e) {
 			exception(e);
 			throw new ConfigurationException("Invalid class specified.", e);
-		} 
+		}
 	}
 
 	/**
@@ -293,7 +294,8 @@ public class MessageQueue<M> implements Queue<M> {
 	 *            - Configuration node (queue node)
 	 * @throws ConfigurationException
 	 */
-	protected void configStore(ConfigNode config) throws ConfigurationException {
+	protected void configStore(ConfigNode config)
+			throws ConfigurationException {
 		store = new MessageStoreManager(name, disableExpiry, ackCache);
 		store.configure(config);
 	}
@@ -333,8 +335,8 @@ public class MessageQueue<M> implements Queue<M> {
 		if (!(config instanceof ConfigPath))
 			throw new ConfigurationException(String.format(
 					"Invalid config node type. [expected:%s][actual:%s]",
-					ConfigPath.class.getCanonicalName(), config.getClass()
-							.getCanonicalName()));
+					ConfigPath.class.getCanonicalName(),
+					config.getClass().getCanonicalName()));
 		LogUtils.debug(getClass(), ((ConfigPath) config).path());
 		try {
 			ConfigAttributes attrs = ConfigUtils.attributes(config);
@@ -364,11 +366,14 @@ public class MessageQueue<M> implements Queue<M> {
 			subscribers.put(subscriber.name(), subscriber);
 			store.subscribe(subscriber);
 
-			LogUtils.debug(getClass(), String.format(
-					"Registered subscriber [%s] type [%s]", subscriber.name(),
-					subscriber.getClass().getCanonicalName()), log);
+			LogUtils.debug(getClass(),
+					String.format("Registered subscriber [%s] type [%s]",
+							subscriber.name(),
+							subscriber.getClass().getCanonicalName()),
+					log);
 		} catch (DataNotFoundException e) {
-			throw new ConfigurationException("Configuration node not found.", e);
+			throw new ConfigurationException("Configuration node not found.",
+					e);
 		} catch (ClassNotFoundException e) {
 			throw new ConfigurationException("Invalid class specified.", e);
 		} catch (InstantiationException e) {
@@ -400,7 +405,7 @@ public class MessageQueue<M> implements Queue<M> {
 
 			if (ackCache != null)
 				ackCache.dispose();
-			
+
 			runner.stop();
 
 			if (state.getState() != EObjectState.Exception)
@@ -420,8 +425,8 @@ public class MessageQueue<M> implements Queue<M> {
 	 *             , LockTimeoutException
 	 */
 	@Override
-	public void add(M message) throws MessageQueueException,
-			LockTimeoutException {
+	public void add(M message)
+			throws MessageQueueException, LockTimeoutException {
 		s_lock.readLock().lock();
 		try {
 			try {
@@ -437,7 +442,8 @@ public class MessageQueue<M> implements Queue<M> {
 			} catch (StateException e) {
 				throw new MessageQueueException("Error adding message.", e);
 			} catch (ByteConvertor.ConversionException e) {
-				throw new MessageQueueException("Error serializing message.", e);
+				throw new MessageQueueException("Error serializing message.",
+						e);
 			}
 		} finally {
 			s_lock.readLock().unlock();
@@ -454,8 +460,8 @@ public class MessageQueue<M> implements Queue<M> {
 	 *             , LockTimeoutException
 	 */
 	@Override
-	public void add(List<M> messages) throws MessageQueueException,
-			LockTimeoutException {
+	public void add(List<M> messages)
+			throws MessageQueueException, LockTimeoutException {
 		s_lock.readLock().lock();
 		try {
 			try {
@@ -476,7 +482,8 @@ public class MessageQueue<M> implements Queue<M> {
 			} catch (StateException e) {
 				throw new MessageQueueException("Error adding message.", e);
 			} catch (ByteConvertor.ConversionException e) {
-				throw new MessageQueueException("Error serializing message.", e);
+				throw new MessageQueueException("Error serializing message.",
+						e);
 			}
 		} finally {
 			s_lock.readLock().unlock();
@@ -526,9 +533,8 @@ public class MessageQueue<M> implements Queue<M> {
 	protected Message<M> createMessage(M message) throws MessageQueueException {
 		Message<M> wm = new Message<M>();
 		wm.data(message);
-		wm.header().id(
-				String.format("%s-%d-%d", name(), System.currentTimeMillis(),
-						sequence.getAndIncrement()));
+		wm.header().id(String.format("%s-%d-%d", name(),
+				System.currentTimeMillis(), sequence.getAndIncrement()));
 		wm.header().timestamp(System.currentTimeMillis());
 
 		return wm;
@@ -546,8 +552,8 @@ public class MessageQueue<M> implements Queue<M> {
 	 *             , LockTimeoutException
 	 */
 	@Override
-	public Message<M> poll(String subscriber) throws MessageQueueException,
-			LockTimeoutException {
+	public Message<M> poll(String subscriber)
+			throws MessageQueueException, LockTimeoutException {
 		return poll(subscriber, timeout);
 	}
 
@@ -576,16 +582,16 @@ public class MessageQueue<M> implements Queue<M> {
 					throw new MessageQueueException(
 							"Subscriber not registered. [subscriber="
 									+ subscriber + "]");
-				MessageDataBlock.MessageDataBlockList data = store.read(
-						subscriber, 1, timeout);
+				MessageDataBlock.MessageDataBlockList data = store
+						.read(subscriber, 1, timeout);
 				if (data != null && data.size() > 0) {
 					MessageDataBlock mb = data.blocks().get(0);
 					if (mb != null) {
 						List<Record> records = mb.records();
 						if (records != null && !records.isEmpty()) {
 							if (records.get(0) != null) {
-								Message<M> m = convertor.read(records.get(0)
-										.bytes());
+								Message<M> m = convertor
+										.read(records.get(0).bytes());
 								m.header().blockid(mb.blockid())
 										.blockindex(records.get(0).index());
 
@@ -597,7 +603,8 @@ public class MessageQueue<M> implements Queue<M> {
 			} catch (StateException e) {
 				throw new MessageQueueException("Error adding message.", e);
 			} catch (ByteConvertor.ConversionException e) {
-				throw new MessageQueueException("Error serializing message.", e);
+				throw new MessageQueueException("Error serializing message.",
+						e);
 			}
 			return null;
 		} finally {
@@ -622,8 +629,8 @@ public class MessageQueue<M> implements Queue<M> {
 	 *             , LockTimeoutException
 	 */
 	@Override
-	public List<Message<M>> batch(String subscriber, int batchSize, long timeout)
-			throws MessageQueueException, LockTimeoutException {
+	public List<Message<M>> batch(String subscriber, int batchSize,
+			long timeout) throws MessageQueueException, LockTimeoutException {
 		s_lock.readLock().lock();
 		try {
 			try {
@@ -663,7 +670,7 @@ public class MessageQueue<M> implements Queue<M> {
 	 */
 	protected List<Message<M>> batch(MessageStoreManager store,
 			String subscriber, int batchSize, long timeout)
-			throws MessageQueueException, LockTimeoutException {
+					throws MessageQueueException, LockTimeoutException {
 		try {
 			long startt = System.currentTimeMillis();
 			long leftt = timeout;
@@ -672,8 +679,8 @@ public class MessageQueue<M> implements Queue<M> {
 			int rem = batchSize;
 
 			while (rem > 0) {
-				MessageDataBlock.MessageDataBlockList data = store.read(
-						subscriber, rem, leftt);
+				MessageDataBlock.MessageDataBlockList data = store
+						.read(subscriber, rem, leftt);
 				if (data != null && data.size() > 0) {
 					if (messages == null)
 						messages = new ArrayList<Message<M>>();
@@ -735,9 +742,10 @@ public class MessageQueue<M> implements Queue<M> {
 	public void run() throws MessageQueueException {
 		try {
 			ObjectState.check(state, EObjectState.Available, getClass());
-			LogUtils.warn(getClass(), String.format(
-					"Running Message Queue GC thread. [%s]",
-					new DateTime().toString("yyyy.MM.dd:HH.mm.ss")), log);
+			LogUtils.warn(getClass(),
+					String.format("Running Message Queue GC thread. [%s]",
+							new DateTime().toString("yyyy.MM.dd:HH.mm.ss")),
+					log);
 			s_lock.readLock().lock();
 			try {
 
@@ -752,23 +760,24 @@ public class MessageQueue<M> implements Queue<M> {
 
 		} catch (StateException e) {
 			exception(e);
-			LogUtils.error(
-					getClass(),
+			LogUtils.error(getClass(),
 					String.format(
 							"Queue management thread terminated with getError. [error=%s]",
-							e.getLocalizedMessage()), log);
+							e.getLocalizedMessage()),
+					log);
 			LogUtils.stacktrace(getClass(), e, log);
 
 			throw new MessageQueueException(
 					"Message queue in invalid setState. [setState="
-							+ state.getState().name() + "]", e);
+							+ state.getState().name() + "]",
+					e);
 		} catch (MessageQueueException e) {
 			exception(e);
-			LogUtils.error(
-					getClass(),
+			LogUtils.error(getClass(),
 					String.format(
 							"Queue management thread terminated with getError. [error=%s]",
-							e.getLocalizedMessage()), log);
+							e.getLocalizedMessage()),
+					log);
 			LogUtils.stacktrace(getClass(), e, log);
 
 			throw e;
@@ -820,9 +829,10 @@ public class MessageQueue<M> implements Queue<M> {
 	}
 
 	protected void registerCounters() {
-		AbstractCounter c = Monitoring.create(Queue.Constants.MONITOR_NAMESPACE
-				+ "." + name, Queue.Constants.MONITOR_COUNTER_ADDS,
-				Count.class, AbstractCounter.Mode.PROD);
+		AbstractCounter c = Monitoring.create(
+				Queue.Constants.MONITOR_NAMESPACE + "." + name,
+				Queue.Constants.MONITOR_COUNTER_ADDS, Count.class,
+				AbstractCounter.Mode.PROD);
 		if (c != null) {
 			counters.put(Queue.Constants.MONITOR_COUNTER_ADDS,
 					new String[] { c.namespace(), c.name() });
@@ -831,8 +841,8 @@ public class MessageQueue<M> implements Queue<M> {
 				Queue.Constants.MONITOR_COUNTER_ADDTIME, Average.class,
 				AbstractCounter.Mode.PROD);
 		if (c != null) {
-			counters.put(Queue.Constants.MONITOR_COUNTER_ADDTIME, new String[] {
-					c.namespace(), c.name() });
+			counters.put(Queue.Constants.MONITOR_COUNTER_ADDTIME,
+					new String[] { c.namespace(), c.name() });
 		}
 	}
 
@@ -886,10 +896,10 @@ public class MessageQueue<M> implements Queue<M> {
 	 * Managed task instance for performing queue management functions.
 	 */
 	protected static final class Runner implements ManagedTask {
-		private long lastrun = System.currentTimeMillis();
-		private TaskState state = new TaskState();
-		private MessageQueue<?> queue;
-		private String name;
+		private long			lastrun	= System.currentTimeMillis();
+		private TaskState		state	= new TaskState();
+		private MessageQueue<?>	queue;
+		private String			name;
 
 		public Runner(MessageQueue<?> queue, String name) {
 			this.queue = queue;
@@ -943,8 +953,8 @@ public class MessageQueue<M> implements Queue<M> {
 					try {
 						queue.run();
 					} catch (MessageQueueException e) {
-						return new TaskState().state(
-								TaskState.ETaskState.Exception).error(e);
+						return new TaskState()
+								.state(TaskState.ETaskState.Exception).error(e);
 					}
 					return new TaskState().state(TaskState.ETaskState.Success);
 				}

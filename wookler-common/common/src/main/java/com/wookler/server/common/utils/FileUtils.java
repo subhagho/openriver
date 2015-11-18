@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Utility class to manage files/directories.
  *
@@ -256,5 +258,20 @@ public class FileUtils {
 			}
 		}
 		return files;
+	}
+
+	public static String insertExtension(File file, String ext) {
+		String fname = file.getName();
+		int ei = fname.lastIndexOf(".");
+		String pre = fname.substring(0, ei);
+		String suf = null;
+		if (ei >= 0) {
+			suf = fname.substring(ei);
+		}
+		if (!StringUtils.isEmpty(suf)) {
+			return String.format("%s.%s%s", pre, ext, suf);
+		} else {
+			return String.format("%s.%s", pre, ext);
+		}
 	}
 }

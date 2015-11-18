@@ -15,6 +15,8 @@ package com.wookler.server.common;
 
 import java.nio.charset.Charset;
 
+import com.wookler.server.common.Monitor.MonitorConfig;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.common.config.Config;
 import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigParams;
@@ -106,16 +108,24 @@ public class Env {
 
 	private void configMonitor() throws Exception {
 		ConfigNode node = ConfigUtils.getConfigNode(config.node(),
-				Monitor.MonitorConfig.class, null);
+				Monitor.MonitorConfig.class, getEnvNode(MonitorConfig.class));
 		Monitor.create(node);
 	}
 
 	private void configTaskManager() throws Exception {
 		ConfigNode node = ConfigUtils.getConfigNode(config.node(),
-				TaskManager.class, null);
+				TaskManager.class, getEnvNode(TaskManager.class));
 		taskmanager = new TaskManager();
 		taskmanager.configure(node);
 		taskmanager.start();
+	}
+
+	private String getEnvNode(Class<?> type) {
+		if (type.isAnnotationPresent(CPath.class)) {
+			CPath cp = type.getAnnotation(CPath.class);
+			return String.format("env.%s", cp.path());
+		}
+		return null;
 	}
 
 	protected void dispose() {

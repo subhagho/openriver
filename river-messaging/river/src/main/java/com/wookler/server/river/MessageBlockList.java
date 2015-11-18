@@ -1,19 +1,17 @@
 /*
- *
- *  * Copyright 2014 Subhabrata Ghosh
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
+ * * Copyright 2014 Subhabrata Ghosh
+ * *
+ * * Licensed under the Apache License, Version 2.0 (the "License");
+ * * you may not use this file except in compliance with the License.
+ * * You may obtain a copy of the License at
+ * *
+ * * http://www.apache.org/licenses/LICENSE-2.0
+ * *
+ * * Unless required by applicable law or agreed to in writing, software
+ * * distributed under the License is distributed on an "AS IS" BASIS,
+ * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * * See the License for the specific language governing permissions and
+ * * limitations under the License.
  */
 
 package com.wookler.server.river;
@@ -30,225 +28,230 @@ import java.util.concurrent.locks.ReentrantLock;
  * @created 18/08/14
  */
 public class MessageBlockList {
-    private static final int EMPTY_BLOCK_SIZE = 25;
+	private static final int EMPTY_BLOCK_SIZE = 25;
 
-    private MessageBlock head;
-    private MessageBlock tail;
-    private MessageBlock writer;
-    private int size;
-    private ReentrantLock lock = new ReentrantLock();
-    private RecycleStrategy strategy;
-    private MessageStoreManager parent;
-    private int emptyBlockSize = EMPTY_BLOCK_SIZE;
-    private ChronicleConfig cc;
+	private MessageBlock		head;
+	private MessageBlock		tail;
+	private MessageBlock		writer;
+	private int					size;
+	private ReentrantLock		lock			= new ReentrantLock();
+	private RecycleStrategy		strategy;
+	private MessageStoreManager	parent;
+	private int					emptyBlockSize	= EMPTY_BLOCK_SIZE;
+	private ChronicleConfig		cc;
 
-    public MessageBlockList(RecycleStrategy strategy, MessageStoreManager parent, ChronicleConfig cc) {
-        this.strategy = strategy;
-        this.parent = parent;
-        this.cc = cc;
-    }
+	public MessageBlockList(RecycleStrategy strategy,
+			MessageStoreManager parent, ChronicleConfig cc) {
+		this.strategy = strategy;
+		this.parent = parent;
+		this.cc = cc;
+	}
 
-    public ReentrantLock lock() {
-        return lock;
-    }
+	public ReentrantLock lock() {
+		return lock;
+	}
 
-    /**
-     * Add a new block to the end (tail) of the queue. The new block is assumed to be the block currently written to.
-     *
-     * @param block - New block to add.
-     * @return - self.
-     */
-    public MessageBlockList add(MessageBlock block) {
-        lock.lock();
-        try {
-            block.next(null);
-            if (head == null) {
-                head = block;
-                tail = head;
-            } else {
-                tail.next(block);
-                block.previous(tail);
-                tail = tail.next();
-            }
-            size++;
+	/**
+	 * Add a new block to the end (tail) of the queue. The new block is assumed
+	 * to be the block currently written to.
+	 *
+	 * @param block
+	 *            - New block to add.
+	 * @return - self.
+	 */
+	public MessageBlockList add(MessageBlock block) {
+		lock.lock();
+		try {
+			block.next(null);
+			if (head == null) {
+				head = block;
+				tail = head;
+			} else {
+				tail.next(block);
+				block.previous(tail);
+				tail = tail.next();
+			}
+			size++;
 
-            return this;
-        } finally {
-            lock.unlock();
-        }
-    }
+			return this;
+		} finally {
+			lock.unlock();
+		}
+	}
 
-    public int emptyBlockCount() {
-        int count = 0;
-        MessageBlock ptr = tail;
-        while (ptr != null) {
-            if (ptr.state() == EBlockState.Unsued) {
-                count++;
-            } else
-                break;
-            ptr = ptr.previous();
-        }
-        return count;
-    }
+	public int emptyBlockCount() {
+		int count = 0;
+		MessageBlock ptr = tail;
+		while (ptr != null) {
+			if (ptr.state() == EBlockState.Unsued) {
+				count++;
+			} else
+				break;
+			ptr = ptr.previous();
+		}
+		return count;
+	}
 
-    public void initEmptyBlocks() throws MessageQueueException {
-        int count = emptyBlockSize - emptyBlockCount();
-        LogUtils.debug(getClass(), "Initializing [" + count + "] empty blocks...");
-        MessageBlock ptr = tail;
-        for (int ii = 0; ii < count; ii++) {
-            MessageBlock b = parent.newblock(cc);
-            lock.lock();
-            try {
-                add(b);
-            } finally {
-                lock.unlock();
-            }
-            ptr = ptr.next();
-        }
-    }
+	public void initEmptyBlocks() throws MessageQueueException {
+		int count = emptyBlockSize - emptyBlockCount();
+		LogUtils.debug(getClass(),
+				"Initializing [" + count + "] empty blocks...");
+		MessageBlock ptr = tail;
+		for (int ii = 0; ii < count; ii++) {
+			MessageBlock b = parent.newblock(cc);
+			lock.lock();
+			try {
+				add(b);
+			} finally {
+				lock.unlock();
+			}
+			ptr = ptr.next();
+		}
+	}
 
-    public MessageBlockList emptyBlockSize(int emptyBlockSize) {
-        this.emptyBlockSize = emptyBlockSize;
+	public MessageBlockList emptyBlockSize(int emptyBlockSize) {
+		this.emptyBlockSize = emptyBlockSize;
 
-        return this;
-    }
+		return this;
+	}
 
-    public int emptyBlockSize() {
-        return this.emptyBlockSize;
-    }
+	public int emptyBlockSize() {
+		return this.emptyBlockSize;
+	}
 
-    /**
-     * Get the block being currently written to. (Always the tail block.)
-     *
-     * @return - Current write block.
-     */
-    public MessageBlock writeblock() throws MessageQueueException {
-        if (writer == null) {
-            MessageBlock ptr = tail;
-            while (ptr != null) {
-                if (ptr.state() == EBlockState.RW) {
-                    writer = ptr;
-                    break;
-                }
-                ptr = ptr.previous();
-            }
-        }
-        if (strategy.recycle(writer)) {
-            MessageBlock b = null;
-            if (writer.next() != null && writer.next().state() == EBlockState.Unsued) {
-                b = writer.next();
-                b.openwriter();
-            } else {
-                LogUtils.warn(getClass(),
-                        "Forcing creation of new block. As no blocks available for writing.");
-                b = parent.newblock(cc);
-                b.openwriter();
-                add(b);
-            }
-            MessageBlock m = writer;
-            m.closewriter();
-                    /*
-                    if (!m.hasReaders()) {
-                        m.unload();
-                    }
-                    */
+	/**
+	 * Get the block being currently written to. (Always the tail block.)
+	 *
+	 * @return - Current write block.
+	 */
+	public MessageBlock writeblock() throws MessageQueueException {
+		if (writer == null) {
+			MessageBlock ptr = tail;
+			while (ptr != null) {
+				if (ptr.state() == EBlockState.RW) {
+					writer = ptr;
+					break;
+				}
+				ptr = ptr.previous();
+			}
+		}
+		if (strategy.recycle(writer)) {
+			MessageBlock b = null;
+			if (writer.next() != null
+					&& writer.next().state() == EBlockState.Unsued) {
+				b = writer.next();
+				b.openwriter();
+			} else {
+				LogUtils.warn(getClass(),
+						"Forcing creation of new block. As no blocks available for writing.");
+				b = parent.newblock(cc);
+				b.openwriter();
+				add(b);
+			}
+			MessageBlock m = writer;
+			m.closewriter();
+			/*
+			 * if (!m.hasReaders()) {
+			 * m.unload();
+			 * }
+			 */
 
-            writer = b;
-        }
-        return writer;
-    }
+			writer = b;
+		}
+		return writer;
+	}
 
-    /**
-     * Return the head of the linked list (Oldest block).
-     *
-     * @return - Head of the list, NULL if empty.
-     */
-    public MessageBlock peek() {
-        return head;
-    }
+	/**
+	 * Return the head of the linked list (Oldest block).
+	 *
+	 * @return - Head of the list, NULL if empty.
+	 */
+	public MessageBlock peek() {
+		return head;
+	}
 
-    /**
-     * Return the tail of the linked list (Newest block).
-     *
-     * @return - Tail of the list
-     */
-    public MessageBlock tail() {
-        return tail;
-    }
+	/**
+	 * Return the tail of the linked list (Newest block).
+	 *
+	 * @return - Tail of the list
+	 */
+	public MessageBlock tail() {
+		return tail;
+	}
 
+	/**
+	 * Remove the head block from the list and return it.
+	 *
+	 * @return - Head of the list, NULL if empty.
+	 */
+	public MessageBlock poll() {
+		lock.lock();
+		try {
+			MessageBlock b = head;
 
-    /**
-     * Remove the head block from the list and return it.
-     *
-     * @return - Head of the list, NULL if empty.
-     */
-    public MessageBlock poll() {
-        lock.lock();
-        try {
-            MessageBlock b = head;
+			head = head.next();
+			head.previous(null);
+			size--;
 
-            head = head.next();
-            head.previous(null);
-            size--;
+			return b;
+		} finally {
+			lock.unlock();
+		}
+	}
 
-            return b;
-        } finally {
-            lock.unlock();
-        }
-    }
+	/**
+	 * Remove a specific block from the list.
+	 *
+	 * @param block
+	 *            - Block to remove.
+	 * @return - Removed Block.
+	 */
+	public MessageBlock remove(MessageBlock block) {
+		lock.lock();
+		if (!block.canGC())
+			return null;
+		try {
+			MessageBlock ptr = head;
+			while (ptr != null) {
+				if (ptr.equals(block)) {
+					MessageBlock prev = ptr.previous();
+					MessageBlock next = ptr.next();
 
-    /**
-     * Remove a specific block from the list.
-     *
-     * @param block - Block to remove.
-     * @return - Removed Block.
-     */
-    public MessageBlock remove(MessageBlock block) {
-        lock.lock();
-        if (!block.canGC())
-            return null;
-        try {
-            MessageBlock ptr = head;
-            while (ptr != null) {
-                if (ptr.equals(block)) {
-                    MessageBlock prev = ptr.previous();
-                    MessageBlock next = ptr.next();
+					if (prev != null) {
+						prev.next(next);
+						next.previous(prev);
+					}
+					size--;
+					if (ptr.equals(head)) {
+						head = next;
+					}
+					return ptr;
+				}
+				ptr = ptr.next();
+			}
+			return null;
+		} finally {
+			lock.unlock();
+		}
+	}
 
-                    if (prev != null) {
-                        prev.next(next);
-                        next.previous(prev);
-                    }
-                    size--;
-                    if (ptr.equals(head)) {
-                        head = next;
-                    }
-                    return ptr;
-                }
-                ptr = ptr.next();
-            }
-            return null;
-        } finally {
-            lock.unlock();
-        }
-    }
+	public MessageBlock find(String id) {
+		MessageBlock ptr = head;
+		while (ptr != null) {
+			if (ptr.id().compareTo(id) == 0) {
+				return ptr;
+			}
+			ptr = ptr.next();
+		}
+		return null;
+	}
 
-    public MessageBlock find(String id) {
-        MessageBlock ptr = head;
-        while (ptr != null) {
-            if (ptr.id().compareTo(id) == 0) {
-                return ptr;
-            }
-            ptr = ptr.next();
-        }
-        return null;
-    }
-
-    /**
-     * Get the current size of the list.
-     *
-     * @return - List size.
-     */
-    public int size() {
-        return size;
-    }
+	/**
+	 * Get the current size of the list.
+	 *
+	 * @return - List size.
+	 */
+	public int size() {
+		return size;
+	}
 }

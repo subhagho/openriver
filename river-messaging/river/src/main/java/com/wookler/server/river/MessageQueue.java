@@ -44,31 +44,29 @@ public class MessageQueue<M> implements Queue<M> {
 			.getLogger(MessageQueue.class);
 
 	public static class Constants {
-		public static final String	CONFIG_TIMEOUT				= "queue.lock.timeout";
-		public static final String	CONFIG_MESSAGE_CONVERTER	= "queue.message.converter";
-
-		public static final String ENV_MGMNT_THREAD_SLEEP = "queue.management.sleep";
-
-		public static final long SLEEP_MGMNT_THREAD = 1000 * 10; // Thread
+		public static final long	SLEEP_MGMNT_THREAD		= 1000 * 10;						// Thread
 		// triggers
 		// every 10
 		// secs.
+		public static final String	ENV_MGMNT_THREAD_SLEEP	= "river.queue.management.sleep";
 	}
 
 	protected ObjectState						state				= new ObjectState();
+	@CParam(name = "queue.message.converter")
 	protected ByteConvertor<M>					convertor;
+	@CParam(name = "queue.lock.timeout", required = false)
 	protected long								timeout				= 100;
 	protected long								mgmntSleepIntrvl	= Constants.SLEEP_MGMNT_THREAD;
 	protected HashMap<String, Subscriber<M>>	subscribers			= new HashMap<String, Subscriber<M>>();
 	protected ReentrantReadWriteLock			s_lock				= new ReentrantReadWriteLock();
 	protected Runner							runner;
+	@CParam(name = "@name")
 	protected String							name;
 	protected boolean							disableExpiry		= false;
-
-	private MessageStoreManager			store;
-	private HashMap<String, String[]>	counters	= new HashMap<String, String[]>();
-	private AtomicLong					sequence	= new AtomicLong();
-	private AckCache<M>					ackCache	= null;
+	private MessageStoreManager					store;
+	private HashMap<String, String[]>			counters			= new HashMap<String, String[]>();
+	private AtomicLong							sequence			= new AtomicLong();
+	private AckCache<M>							ackCache			= null;
 
 	/**
 	 * Enable/Disable message block expiry.
@@ -207,7 +205,6 @@ public class MessageQueue<M> implements Queue<M> {
 	 *            - Configuration node for this instance.
 	 * @throws ConfigurationException
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
 	public void configure(ConfigNode config) throws ConfigurationException {
 		try {
@@ -216,32 +213,11 @@ public class MessageQueue<M> implements Queue<M> {
 						"Invalid config node type. [expected:%s][actual:%s]",
 						ConfigPath.class.getCanonicalName(),
 						config.getClass().getCanonicalName()));
-			ConfigAttributes attr = ConfigUtils.attributes(config);
-			name = attr.attribute(Queue.Constants.CONFIG_ATTR_NAME);
-			if (StringUtils.isEmpty(name))
-				throw new ConfigurationException(
-						"Missing attribute. [attribute="
-								+ Queue.Constants.CONFIG_ATTR_NAME + "]");
+			ConfigUtils.parse(config, this);
+
 			LogUtils.debug(getClass(),
 					String.format("Configuring queue. [name=%s]", name()), log);
 
-			ConfigParams params = ConfigUtils.params(config);
-			String s = params.param(Constants.CONFIG_TIMEOUT);
-			if (!StringUtils.isEmpty(s))
-				timeout = Long.parseLong(s);
-
-			s = params.param(Constants.CONFIG_MESSAGE_CONVERTER);
-			if (StringUtils.isEmpty(s))
-				throw new ConfigurationException("Missing parameter. [name="
-						+ Constants.CONFIG_MESSAGE_CONVERTER + "]");
-			Class<?> cls = Class.forName(s);
-			Object o = cls.newInstance();
-
-			if (!(o instanceof ByteConvertor))
-				throw new ConfigurationException(
-						"Invalid converter class specified. [class="
-								+ cls.getCanonicalName() + "]");
-			convertor = (ByteConvertor<M>) o;
 			LogUtils.debug(getClass(),
 					String.format(
 							"Registered message byte converter. [type=%s]",
@@ -254,13 +230,13 @@ public class MessageQueue<M> implements Queue<M> {
 
 			configStore(config);
 
-			ConfigPath cp = (ConfigPath) config;
-			ConfigNode node = cp.search(Subscriber.Constants.CONFIG_NODE_NAME);
+			ConfigNode node = ConfigUtils.getConfigNode(config,
+					Subscriber.class, null);
 			if (node != null) {
 				configSubscribers(node);
 			}
 
-			s = System.getProperty(Constants.ENV_MGMNT_THREAD_SLEEP);
+			String s = System.getProperty(Constants.ENV_MGMNT_THREAD_SLEEP);
 			if (!StringUtils.isEmpty(s)) {
 				mgmntSleepIntrvl = Long.parseLong(s);
 			}
@@ -271,20 +247,7 @@ public class MessageQueue<M> implements Queue<M> {
 		} catch (ConfigurationException e) {
 			exception(e);
 			throw e;
-		} catch (DataNotFoundException e) {
-			exception(e);
-			throw new ConfigurationException("Configuration node not found.",
-					e);
-		} catch (ClassNotFoundException e) {
-			exception(e);
-			throw new ConfigurationException("Invalid class specified.", e);
-		} catch (InstantiationException e) {
-			exception(e);
-			throw new ConfigurationException("Invalid class specified.", e);
-		} catch (IllegalAccessException e) {
-			exception(e);
-			throw new ConfigurationException("Invalid class specified.", e);
-		}
+		} 
 	}
 
 	/**
@@ -339,13 +302,7 @@ public class MessageQueue<M> implements Queue<M> {
 					config.getClass().getCanonicalName()));
 		LogUtils.debug(getClass(), ((ConfigPath) config).path());
 		try {
-			ConfigAttributes attrs = ConfigUtils.attributes(config);
-			String s = attrs.attribute(Queue.Constants.CONFIG_ATTR_CLASS);
-			if (StringUtils.isEmpty(s))
-				throw new ConfigurationException(
-						"Missing attribute. [attribute="
-								+ Queue.Constants.CONFIG_ATTR_CLASS + "]");
-			Class<?> c = Class.forName(s);
+			Class<?> c = ConfigUtils.getImplementingClass(config);
 			Object o = c.newInstance();
 
 			if (!(o instanceof Subscriber))
@@ -371,11 +328,6 @@ public class MessageQueue<M> implements Queue<M> {
 							subscriber.name(),
 							subscriber.getClass().getCanonicalName()),
 					log);
-		} catch (DataNotFoundException e) {
-			throw new ConfigurationException("Configuration node not found.",
-					e);
-		} catch (ClassNotFoundException e) {
-			throw new ConfigurationException("Invalid class specified.", e);
 		} catch (InstantiationException e) {
 			throw new ConfigurationException("Invalid class specified.", e);
 		} catch (IllegalAccessException e) {
@@ -1018,5 +970,49 @@ public class MessageQueue<M> implements Queue<M> {
 			}
 			return false;
 		}
+	}
+
+	/**
+	 * @return the convertor
+	 */
+	public ByteConvertor<M> getConvertor() {
+		return convertor;
+	}
+
+	/**
+	 * @param convertor
+	 *            the convertor to set
+	 */
+	public void setConvertor(ByteConvertor<M> convertor) {
+		this.convertor = convertor;
+	}
+
+	/**
+	 * @return the timeout
+	 */
+	public long getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * @param timeout
+	 *            the timeout to set
+	 */
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
 	}
 }

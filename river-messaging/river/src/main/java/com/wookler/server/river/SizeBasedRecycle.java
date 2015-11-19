@@ -17,13 +17,11 @@
 package com.wookler.server.river;
 
 import com.wookler.server.common.ConfigurationException;
-import com.wookler.server.common.DataNotFoundException;
+import com.wookler.server.common.config.CParam;
 import com.wookler.server.common.config.ConfigNode;
-import com.wookler.server.common.config.ConfigParams;
 import com.wookler.server.common.config.ConfigPath;
 import com.wookler.server.common.config.ConfigUtils;
 import com.wookler.server.common.utils.LogUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Recycle strategy based on the number of records written to the block.
@@ -36,6 +34,7 @@ public class SizeBasedRecycle implements RecycleStrategy {
 		public static final String CONFIG_RECYCLE_SIZE = "recycle.size";
 	}
 
+	@CParam(name = "recycle.size")
 	private long size;
 
 	@Override
@@ -55,32 +54,29 @@ public class SizeBasedRecycle implements RecycleStrategy {
 					"Invalid config node type. [expected:%s][actual:%s]",
 					ConfigPath.class.getCanonicalName(),
 					config.getClass().getCanonicalName()));
-		if (!ConfigUtils.checkname(config,
-				RecycleStrategy.Constants.CONFIG_NODE_NAME)) {
-			throw new ConfigurationException(
-					"Invalid Configuration node. [name=" + config.name() + "]");
-		}
-
+		ConfigUtils.parse(config, this);
 		LogUtils.debug(getClass(), ((ConfigPath) config).path());
-		try {
-			ConfigParams params = ConfigUtils.params(config);
-			String s = params.param(Constants.CONFIG_RECYCLE_SIZE);
-			if (StringUtils.isEmpty(s))
-				throw new ConfigurationException("Missing parameter. [name="
-						+ Constants.CONFIG_RECYCLE_SIZE + "]");
-			LogUtils.debug(getClass(),
-					"[" + Constants.CONFIG_RECYCLE_SIZE + "=" + s + "]");
-
-			size = Long.parseLong(s);
-
-		} catch (DataNotFoundException e) {
-			throw new ConfigurationException(
-					"Error initializing recycle strategy.", e);
-		}
+		LogUtils.debug(getClass(),
+				"Using message block recycle size = " + size + ".");
 	}
 
 	@Override
 	public void dispose() {
 		// Do nothing...
+	}
+
+	/**
+	 * @return the size
+	 */
+	public long getSize() {
+		return size;
+	}
+
+	/**
+	 * @param size
+	 *            the size to set
+	 */
+	public void setSize(long size) {
+		this.size = size;
 	}
 }

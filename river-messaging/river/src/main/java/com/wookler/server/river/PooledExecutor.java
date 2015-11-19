@@ -17,19 +17,17 @@
 package com.wookler.server.river;
 
 import com.wookler.server.common.*;
+import com.wookler.server.common.config.CParam;
 import com.wookler.server.common.config.ConfigNode;
-import com.wookler.server.common.config.ConfigParams;
 import com.wookler.server.common.config.ConfigPath;
 import com.wookler.server.common.config.ConfigUtils;
 import com.wookler.server.common.utils.LogUtils;
 import com.wookler.server.common.utils.Monitoring;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -43,11 +41,8 @@ public class PooledExecutor<M> extends AbstractExecutor<M> {
 	private static final Logger log = LoggerFactory
 			.getLogger(PooledExecutor.class);
 
-	public static final class Constants {
-		public static final String CONFIG_POOL_SIZE = "executor.pool.size";
-	}
-
 	private List<MonitoredThread>	threads		= null;
+	@CParam(name = "executor.pool.size", required = false)
 	private int						poolSize	= 1;
 
 	@Override
@@ -246,7 +241,6 @@ public class PooledExecutor<M> extends AbstractExecutor<M> {
 	 */
 	@Override
 	public void configure(ConfigNode config) throws ConfigurationException {
-
 		try {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
@@ -254,20 +248,10 @@ public class PooledExecutor<M> extends AbstractExecutor<M> {
 						ConfigPath.class.getCanonicalName(),
 						config.getClass().getCanonicalName()));
 			LogUtils.debug(getClass(), ((ConfigPath) config).path());
-			try {
-				ConfigParams cp = ConfigUtils.params(config);
-				HashMap<String, String> params = cp.params();
-
-				String s = params.get(Constants.CONFIG_POOL_SIZE);
-				if (!StringUtils.isEmpty(s)) {
-					poolSize = Integer.parseInt(s);
-				}
-				LogUtils.debug(getClass(), "[" + Constants.CONFIG_POOL_SIZE
-						+ "=" + poolSize + "]");
-			} catch (DataNotFoundException e) {
-				LogUtils.warn(getClass(),
-						"Pooled executor loaded with default configuration.");
-			}
+			ConfigUtils.parse(config, this);
+			LogUtils.debug(getClass(),
+					"Configured Pooled Executor with pool size = " + poolSize
+							+ ". [name=" + name + "]");
 			state.setState(EProcessState.Running);
 		} catch (ConfigurationException e) {
 			exception(e);
@@ -304,5 +288,20 @@ public class PooledExecutor<M> extends AbstractExecutor<M> {
 		} finally {
 			lock.writeLock().unlock();
 		}
+	}
+
+	/**
+	 * @return the poolSize
+	 */
+	public int getPoolSize() {
+		return poolSize;
+	}
+
+	/**
+	 * @param poolSize
+	 *            the poolSize to set
+	 */
+	public void setPoolSize(int poolSize) {
+		this.poolSize = poolSize;
 	}
 }

@@ -10,6 +10,7 @@ package com.wookler.server.common.utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xerial.snappy.SnappyFramedOutputStream;
@@ -43,6 +43,24 @@ public class FileBackupHelper implements Configurable {
 	private static final Logger log = LoggerFactory
 			.getLogger(FileBackupHelper.class);
 
+	public static final class Constants {
+		public static final String	FILE_EXT_ZIP	= ".zip";
+		public static final String	FILE_EXT_BACKUP	= ".bak";
+
+		public static final String getZipFilename(String name) {
+			return String.format("%s%s", name, FILE_EXT_ZIP);
+		}
+
+		public static final String getBackupFilename(String name) {
+			return String.format("%s%s", name, FILE_EXT_BACKUP);
+		}
+
+		public static boolean isBackupFile(String name) {
+			return (name.endsWith(FILE_EXT_BACKUP)
+					|| name.endsWith(FILE_EXT_ZIP));
+		}
+	}
+
 	@CParam(name = "backup.directory", required = false)
 	private File backupDirectory;
 
@@ -55,6 +73,8 @@ public class FileBackupHelper implements Configurable {
 	private AtomicInteger sequence = new AtomicInteger(0);
 
 	/**
+	 * Check if compression is enabled.
+	 * 
 	 * @return the compress
 	 */
 	public boolean isCompress() {
@@ -62,6 +82,8 @@ public class FileBackupHelper implements Configurable {
 	}
 
 	/**
+	 * Turn compression On/Off.
+	 * 
 	 * @param compress
 	 *            the compress to set
 	 */
@@ -70,6 +92,8 @@ public class FileBackupHelper implements Configurable {
 	}
 
 	/**
+	 * Get the backup directory handle.
+	 * 
 	 * @return the backupDirectory
 	 */
 	public File getBackupDirectory() {
@@ -77,6 +101,8 @@ public class FileBackupHelper implements Configurable {
 	}
 
 	/**
+	 * Set the backup directory.
+	 * 
 	 * @param backupDirectory
 	 *            the backupDirectory to set
 	 */
@@ -85,6 +111,9 @@ public class FileBackupHelper implements Configurable {
 	}
 
 	/**
+	 * Get the Max number of backup files to keep. If backupCount is set to less
+	 * than 0 all files will be backed up.
+	 * 
 	 * @return the backupCount
 	 */
 	public int getBackupCount() {
@@ -92,6 +121,9 @@ public class FileBackupHelper implements Configurable {
 	}
 
 	/**
+	 * Set the Max number of backup files to keep. If backupCount is set to less
+	 * than 0 all files will be backed up.
+	 * 
 	 * @param backupCount
 	 *            the backupCount to set
 	 */
@@ -99,6 +131,15 @@ public class FileBackupHelper implements Configurable {
 		this.backupCount = backupCount;
 	}
 
+	/**
+	 * Backup the specified file to the configured backup directory. If
+	 * compression is enabled will compress using Snappy compression.
+	 * 
+	 * @param source
+	 *            - File handle to backup.
+	 * @return - File handle for the backup file created.
+	 * @throws Exception
+	 */
 	public File backup(File source) throws Exception {
 		Preconditions.checkArgument(source != null && source.exists());
 
@@ -150,7 +191,9 @@ public class FileBackupHelper implements Configurable {
 				sequence.incrementAndGet());
 		String fname = FileUtils.insertExtension(source, cf);
 		if (compress)
-			fname = fname + ".zip";
+			fname = Constants.getZipFilename(fname);
+		else
+			fname = Constants.getBackupFilename(fname);
 
 		fname = String.format("%s/%s", backupDirectory.getAbsolutePath(),
 				fname);
@@ -158,7 +201,19 @@ public class FileBackupHelper implements Configurable {
 	}
 
 	private void checkBackupSize() throws Exception {
-		File[] fList = backupDirectory.listFiles();
+		if (backupCount < 0)
+			return;
+
+		FilenameFilter filter = new FilenameFilter() {
+
+			@Override
+			public boolean accept(File dir, String name) {
+				name = name.toLowerCase();
+				return Constants.isBackupFile(name);
+			}
+		};
+
+		File[] fList = backupDirectory.listFiles(filter);
 		if (fList != null && fList.length >= backupCount) {
 			int deleteCount = fList.length - backupCount + 1;
 			Map<Path, BasicFileAttributes> deleteMap = new HashMap<>();

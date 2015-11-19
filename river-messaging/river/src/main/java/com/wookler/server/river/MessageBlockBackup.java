@@ -61,12 +61,7 @@ public class MessageBlockBackup implements Configurable {
 	@CParam(name = "backup.directory")
 	private File		destination;
 	private ObjectState	state	= new ObjectState();
-	@CParam(name = "@" + GlobalConstants.CONFIG_ATTR_NAME)
 	private String		qname;
-
-	public MessageBlockBackup(String qname) {
-		this.qname = qname;
-	}
 
 	/**
 	 * Configure the backup handler.
@@ -85,14 +80,8 @@ public class MessageBlockBackup implements Configurable {
 						config.getClass().getCanonicalName()));
 			LogUtils.debug(getClass(), ((ConfigPath) config).path());
 
-			config = ConfigUtils.getConfigNode(config, getClass(), null);
-
-			if (StringUtils.isEmpty(qname)) {
-				throw new ConfigurationException(
-						"Invalid Configuration node. [name=" + config.name()
-								+ "]");
-			}
-
+			ConfigUtils.parse(config, this);
+			
 			LogUtils.debug(getClass(), "[ Backup Directory:"
 					+ destination.getAbsolutePath() + "]");
 			if (!destination.exists())
@@ -413,5 +402,57 @@ public class MessageBlockBackup implements Configurable {
 		public BlockBackupException(String mesg, Throwable inner) {
 			super(_PREFIX_ + mesg, inner);
 		}
+	}
+
+	/**
+	 * @return the destination
+	 */
+	public File getDestination() {
+		return destination;
+	}
+
+	/**
+	 * @param destination
+	 *            the destination to set
+	 */
+	public void setDestination(File destination) {
+		this.destination = destination;
+	}
+
+	/**
+	 * @return the qname
+	 */
+	public String getQname() {
+		return qname;
+	}
+
+	/**
+	 * @param qname
+	 *            the qname to set
+	 */
+	public void setQname(String qname) {
+		this.qname = qname;
+	}
+
+	/**
+	 * @return the state
+	 */
+	public ObjectState getState() {
+		return state;
+	}
+
+	/**
+	 * @return the retentionValue
+	 */
+	public String getRetentionValue() {
+		return retentionValue;
+	}
+
+	/**
+	 * @param retentionValue
+	 *            the retentionValue to set
+	 */
+	public void setRetentionValue(String retentionValue) {
+		this.retentionValue = retentionValue;
 	}
 }

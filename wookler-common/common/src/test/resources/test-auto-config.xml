@@ -36,7 +36,7 @@
 			<backup>
 				<params>
 					<param name="backup.directory" value="/tmp/test/recycle/backup" />
-					<param name="backup.count" value="3" />
+					<param name="backup.count" value="10" />
 					<param name="backup.compress" value="true" />
 				</params>
 			</backup>

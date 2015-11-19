@@ -1,19 +1,17 @@
 /*
- *
- *  * Copyright 2014 Subhabrata Ghosh
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
+ * * Copyright 2014 Subhabrata Ghosh
+ * *
+ * * Licensed under the Apache License, Version 2.0 (the "License");
+ * * you may not use this file except in compliance with the License.
+ * * You may obtain a copy of the License at
+ * *
+ * * http://www.apache.org/licenses/LICENSE-2.0
+ * *
+ * * Unless required by applicable law or agreed to in writing, software
+ * * distributed under the License is distributed on an "AS IS" BASIS,
+ * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * * See the License for the specific language governing permissions and
+ * * limitations under the License.
  */
 
 package com.wookler.server.river;
@@ -24,7 +22,6 @@ import com.wookler.server.common.utils.LogUtils;
 import com.wookler.server.common.utils.Monitoring;
 import com.wookler.server.river.AckCacheStructs.MessageAckRecord;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,28 +37,19 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 12/08/14
  */
+@CPath(path = "subscriber")
 public abstract class Subscriber<M> implements Configurable, AckHandler {
 	private static final Logger log = LoggerFactory.getLogger(Subscriber.class);
 
 	public static final class Constants {
-		public static final String CONFIG_NODE_NAME = "subscriber";
-		public static final String CONFIG_NAME = "name";
-		public static final String CONFIG_BATCH_SIZE = "subscriber.batch.size";
-		public static final String CONFIG_POLL_TIMEOUT = "subscriber.poll.timeout";
-		public static final String CONFIG_ACK_ASYNC = "subscriber.ack.async";
-		public static final String CONFIG_ACK_REQUIRED = "subscriber.ack.required";
-		public static final String CONFIG_ACK_CACHESIZE = "subscriber.ack.cache.size";
-		public static final String CONFIG_ACK_TIMEOUT = "subscriber.ack.timeout";
-		public static final String CONFIG_RETRY_COUNT = "subscriber.retry.count";
-
-		public static final String MONITOR_NAMESPACE = "river.counters.subscriber";
-		public static final String MONITOR_COUNTER_ACKS = "acks";
-		public static final String MONITOR_COUNTER_ACKS_CACHE_ADD = "acks.add";
-		public static final String MONITOR_COUNTER_ACKS_CACHE_REM = "acks.remove";
-		public static final String MONITOR_COUNTER_ACKS_CACHE_READ = "acks.read";
-		public static final String MONITOR_COUNTER_RESEND = "resend";
-		public static final String MONITOR_COUNTER_READS = "reads";
-		public static final String MONITOR_COUNTER_READTIME = "time.read";
+		public static final String	MONITOR_NAMESPACE				= "river.counters.subscriber";
+		public static final String	MONITOR_COUNTER_ACKS			= "acks";
+		public static final String	MONITOR_COUNTER_ACKS_CACHE_ADD	= "acks.add";
+		public static final String	MONITOR_COUNTER_ACKS_CACHE_REM	= "acks.remove";
+		public static final String	MONITOR_COUNTER_ACKS_CACHE_READ	= "acks.read";
+		public static final String	MONITOR_COUNTER_RESEND			= "resend";
+		public static final String	MONITOR_COUNTER_READS			= "reads";
+		public static final String	MONITOR_COUNTER_READTIME		= "time.read";
 
 		public static final int RetryCount = 3;
 	}
@@ -71,41 +59,49 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 	/**
 	 * Instance setState.
 	 */
-	protected ObjectState state = new ObjectState();
+	protected ObjectState	state				= new ObjectState();
 	/**
 	 * Instance name.
 	 */
-	protected String name;
+	@CParam(name = "@name")
+	protected String		name;
 	/**
 	 * Configured batch size for de-queuing messages.
 	 */
-	protected int batchSize;
+	@CParam(name = "subscriber.batch.size")
+	protected int			batchSize;
 	/**
 	 * Configured timeout for Queue operations.
 	 */
-	protected long queueTimeout;
+	@CParam(name = "subscriber.poll.timeout")
+	protected long			queueTimeout;
 	/**
 	 * Message delivery expects acknowledgement?
 	 */
-	protected boolean ackrequired = false;
+	@CParam(name = "subscriber.ack.required", required = false)
+	protected boolean		ackrequired			= false;
 	/**
 	 * Whether the messages should be acked in an async manner?
 	 */
-	protected boolean subscriberAckAsync = false;
+	@CParam(name = "subscriber.ack.async", required = false)
+	protected boolean		subscriberAckAsync	= false;
 	/**
 	 * Configured size of the resend cache.
 	 */
-	protected int cachesize = -1;
+	@CParam(name = "subscriber.ack.cache.size", required = false)
+	protected int			cachesize			= -1;
 	/**
 	 * Message fetch lock.
 	 */
-	protected ReentrantLock lock = new ReentrantLock();
+	protected ReentrantLock	lock				= new ReentrantLock();
 
+	@CParam(name = "subscriber.retry.count", required = false)
 	protected int retryCount = Constants.RetryCount;
 
-	private long acktimeout;
-	private Queue<M> queue;
-	private AckCache<M> ackCache;
+	@CParam(name = "subscriber.ack.timeout", required = false)
+	private long		acktimeout;
+	private Queue<M>	queue;
+	private AckCache<M>	ackCache;
 
 	/**
 	 * Get the subscriber setState.
@@ -294,74 +290,24 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
 
-			ConfigAttributes ca = ConfigUtils.attributes(config);
-			if (ca == null)
-				throw new ConfigurationException(
-						"No attribute found for node. [node=" + config.name()
-								+ "]");
-			name = ca.attribute(Constants.CONFIG_NAME);
+			ConfigUtils.parse(config, this);
 
-			ConfigParams cp = ConfigUtils.params(config);
-			HashMap<String, String> params = cp.params();
-
-			String s = params.get(Constants.CONFIG_BATCH_SIZE);
-			if (StringUtils.isEmpty(s))
-				throw new ConfigurationException(
-						"Missing configuration parameter. [name="
-								+ Constants.CONFIG_BATCH_SIZE + "]");
-			LogUtils.debug(getClass(), "[" + Constants.CONFIG_BATCH_SIZE + "="
-					+ s + "]");
-			batchSize = Integer.parseInt(s);
-
-			s = params.get(Constants.CONFIG_POLL_TIMEOUT);
-			if (StringUtils.isEmpty(s))
-				throw new ConfigurationException(
-						"Missing configuration parameter. [name="
-								+ Constants.CONFIG_POLL_TIMEOUT + "]");
-			LogUtils.debug(getClass(), "[" + Constants.CONFIG_POLL_TIMEOUT
-					+ "=" + s + "]");
-			queueTimeout = Long.parseLong(s);
-
-			s = params.get(Constants.CONFIG_ACK_ASYNC);
-			if (StringUtils.isNotEmpty(s)) {
-				subscriberAckAsync = Boolean.parseBoolean(s);
-			}
-
-			s = params.get(Constants.CONFIG_ACK_REQUIRED);
-			if (!StringUtils.isEmpty(s)) {
-				ackrequired = Boolean.parseBoolean(s);
-				if (ackrequired) {
-					s = params.get(Constants.CONFIG_ACK_CACHESIZE);
-					if (StringUtils.isEmpty(s))
-						throw new ConfigurationException(
-								"Missing parameter. [name="
-										+ Constants.CONFIG_ACK_CACHESIZE + "]");
-					cachesize = Integer.parseInt(s); // Cache size
-					s = params.get(Constants.CONFIG_ACK_TIMEOUT);
-					if (StringUtils.isEmpty(s))
-						throw new ConfigurationException(
-								"Missing parameter. [name="
-										+ Constants.CONFIG_ACK_TIMEOUT + "]");
-					acktimeout = Long.parseLong(s);
-				}
-			}
-
-			s = params.get(Constants.CONFIG_RETRY_COUNT);
-			if (!StringUtils.isEmpty(s)) {
-				retryCount = Integer.parseInt(s);
+			if (ackrequired) {
+				if (cachesize <= 0)
+					throw new ConfigurationException(
+							"ACK cache size not specified.");
+				if (acktimeout <= 0)
+					throw new ConfigurationException(
+							"ACK timeout not specified.");
 			}
 
 			registerCounters();
 		} catch (ConfigurationException ce) {
 			exception(ce);
 			throw ce;
-		} catch (DataNotFoundException de) {
-			exception(de);
-			throw new ConfigurationException("Error configuring Subscriber.",
-					de);
 		}
 	}
 
@@ -467,7 +413,8 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 										Constants.MONITOR_COUNTER_RESEND,
 										messages.size());
 							}
-							// set the resendCount to the number of messages that require to be resent.
+							// set the resendCount to the number of messages
+							// that require to be resent.
 							resendCount = read.size();
 							int rem = csize - read.size();
 							if (rem > 0) {
@@ -475,7 +422,8 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 								int count = 0;
 								try {
 									messages = queue.batch(name, rem, timeout);
-									if (messages != null && !messages.isEmpty()) {
+									if (messages != null
+											&& !messages.isEmpty()) {
 										count = messages.size();
 										incrementCounter(
 												Constants.MONITOR_COUNTER_READS,
@@ -491,7 +439,7 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 							}
 						}
 						if (!read.isEmpty()) {
-						    // invoke ackCache.add() along with the resendCount
+							// invoke ackCache.add() along with the resendCount
 							ackCache.add(name, read, recs, resendCount);
 							return read;
 						}
@@ -511,10 +459,9 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 			throw new MessageQueueException(
 					"Error in getting message batch. Not able to check the subscriber state",
 					e);
-		} 
+		}
 		return null;
 	}
-
 
 	/**
 	 * Get the next message in the queue.
@@ -538,10 +485,12 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 								List<Message<M>> messages = ackCache
 										.getMessagesForResend(name, csize);
 								if (messages != null && !messages.isEmpty()) {
-								    // found a message that requires resend (resendCount = 1)
+									// found a message that requires resend
+									// (resendCount = 1)
 									ackCache.add(name, messages, recs, 1);
 									incrementCounter(
-											Constants.MONITOR_COUNTER_RESEND, 1);
+											Constants.MONITOR_COUNTER_RESEND,
+											1);
 									return messages.get(0);
 								}
 							}
@@ -578,9 +527,10 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 		} catch (LockTimeoutException te) {
 			LogUtils.mesg(getClass(), te.getLocalizedMessage());
 		} catch (StateException e) {
-			throw new MessageQueueException(String.format(
-					"[%s:%s] Invalid Subscriber state. [%s]", getClass(),
-					name(), e.getLocalizedMessage()), e);
+			throw new MessageQueueException(
+					String.format("[%s:%s] Invalid Subscriber state. [%s]",
+							getClass(), name(), e.getLocalizedMessage()),
+					e);
 		}
 		return null;
 	}
@@ -598,8 +548,9 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 
 	protected void registerCounters() {
 
-		AbstractCounter c = Monitoring.create(Constants.MONITOR_NAMESPACE + "."
-				+ name, Constants.MONITOR_COUNTER_ACKS, Count.class,
+		AbstractCounter c = Monitoring.create(
+				Constants.MONITOR_NAMESPACE + "." + name,
+				Constants.MONITOR_COUNTER_ACKS, Count.class,
 				AbstractCounter.Mode.PROD);
 		if (c != null) {
 			counters.put(Constants.MONITOR_COUNTER_ACKS,
@@ -679,5 +630,125 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 			String[] names = counters.get(name);
 			Monitoring.timerstop(starttime, count, names[0], names[1]);
 		}
+	}
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name
+	 *            the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * @return the batchSize
+	 */
+	public int getBatchSize() {
+		return batchSize;
+	}
+
+	/**
+	 * @param batchSize
+	 *            the batchSize to set
+	 */
+	public void setBatchSize(int batchSize) {
+		this.batchSize = batchSize;
+	}
+
+	/**
+	 * @return the queueTimeout
+	 */
+	public long getQueueTimeout() {
+		return queueTimeout;
+	}
+
+	/**
+	 * @param queueTimeout
+	 *            the queueTimeout to set
+	 */
+	public void setQueueTimeout(long queueTimeout) {
+		this.queueTimeout = queueTimeout;
+	}
+
+	/**
+	 * @return the ackrequired
+	 */
+	public boolean isAckrequired() {
+		return ackrequired;
+	}
+
+	/**
+	 * @param ackrequired
+	 *            the ackrequired to set
+	 */
+	public void setAckrequired(boolean ackrequired) {
+		this.ackrequired = ackrequired;
+	}
+
+	/**
+	 * @return the subscriberAckAsync
+	 */
+	public boolean isSubscriberAckAsync() {
+		return subscriberAckAsync;
+	}
+
+	/**
+	 * @param subscriberAckAsync
+	 *            the subscriberAckAsync to set
+	 */
+	public void setSubscriberAckAsync(boolean subscriberAckAsync) {
+		this.subscriberAckAsync = subscriberAckAsync;
+	}
+
+	/**
+	 * @return the cachesize
+	 */
+	public int getCachesize() {
+		return cachesize;
+	}
+
+	/**
+	 * @param cachesize
+	 *            the cachesize to set
+	 */
+	public void setCachesize(int cachesize) {
+		this.cachesize = cachesize;
+	}
+
+	/**
+	 * @return the retryCount
+	 */
+	public int getRetryCount() {
+		return retryCount;
+	}
+
+	/**
+	 * @param retryCount
+	 *            the retryCount to set
+	 */
+	public void setRetryCount(int retryCount) {
+		this.retryCount = retryCount;
+	}
+
+	/**
+	 * @return the acktimeout
+	 */
+	public long getAcktimeout() {
+		return acktimeout;
+	}
+
+	/**
+	 * @param acktimeout
+	 *            the acktimeout to set
+	 */
+	public void setAcktimeout(long acktimeout) {
+		this.acktimeout = acktimeout;
 	}
 }

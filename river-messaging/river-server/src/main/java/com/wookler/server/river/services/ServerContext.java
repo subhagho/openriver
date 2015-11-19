@@ -1,12 +1,9 @@
 /*
  * Copyright [2014] Subhabrata Ghosh
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +21,6 @@ import com.wookler.server.river.MessageQueue;
 import com.wookler.server.river.MessageQueueException;
 import com.wookler.server.river.Queue;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,22 +35,22 @@ public class ServerContext implements Configurable {
 			.getLogger(ServerContext.class);
 
 	public static final class Constants {
-		public static final String CONFIG_ROOT_PATH = "configuration";
-		public static final String CONFIG_NODE_NAME = "server";
+		public static final String	CONFIG_ROOT_PATH	= "configuration";
+		public static final String	CONFIG_NODE_NAME	= "server";
 
-		public static final String CONFIG_PORT = "server.queue.port";
-		public static final String CONFIG_SSL_PORT = "server.queue.ssl.port";
-		public static final String CONFIG_NUM_THREADS = "server.queue.server.threads";
-		public static final String CONFIG_COMPRESS = "server.records.compress";
+		public static final String	CONFIG_PORT			= "server.queue.port";
+		public static final String	CONFIG_SSL_PORT		= "server.queue.ssl.port";
+		public static final String	CONFIG_NUM_THREADS	= "server.queue.server.threads";
+		public static final String	CONFIG_COMPRESS		= "server.records.compress";
 	}
 
-	private ObjectState state = new ObjectState();
-	private HashMap<String, MessageQueue<?>> queues = new HashMap<String, MessageQueue<?>>();
-	private int q_port = 8080;
-	private int q_sslPort = 7443;
-	private int n_threads = 2;
-	private boolean sslmode = false;
-	private boolean compress = true;
+	private ObjectState							state		= new ObjectState();
+	private HashMap<String, MessageQueue<?>>	queues		= new HashMap<String, MessageQueue<?>>();
+	private int									q_port		= 8080;
+	private int									q_sslPort	= 7443;
+	private int									n_threads	= 2;
+	private boolean								sslmode		= false;
+	private boolean								compress	= true;
 
 	/**
 	 * Configure this Queue Server. Sample:
@@ -86,8 +82,8 @@ public class ServerContext implements Configurable {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
 			ConfigPath cp = (ConfigPath) config;
 			// Load the server configuration.
 			ConfigNode sn = cp.search(Constants.CONFIG_NODE_NAME);
@@ -102,28 +98,28 @@ public class ServerContext implements Configurable {
 			}
 			LogUtils.mesg(getClass(), "Writer Port : " + q_port);
 			if (sa.contains(Constants.CONFIG_NUM_THREADS)) {
-				n_threads = Integer.parseInt(sa
-						.param(Constants.CONFIG_NUM_THREADS));
+				n_threads = Integer
+						.parseInt(sa.param(Constants.CONFIG_NUM_THREADS));
 			}
 			LogUtils.mesg(getClass(), "Writer Thread Count : " + n_threads);
 
 			// Check is SSL mode is enabled.
 			if (sslmode) {
 				if (sa.contains(Constants.CONFIG_SSL_PORT)) {
-					q_sslPort = Integer.parseInt(sa
-							.param(Constants.CONFIG_SSL_PORT));
+					q_sslPort = Integer
+							.parseInt(sa.param(Constants.CONFIG_SSL_PORT));
 				}
 				LogUtils.mesg(getClass(), "Admin SSL Port : " + q_sslPort);
 
 			}
 
 			if (sa.contains(Constants.CONFIG_COMPRESS)) {
-				compress = Boolean.parseBoolean(sa
-						.param(Constants.CONFIG_COMPRESS));
+				compress = Boolean
+						.parseBoolean(sa.param(Constants.CONFIG_COMPRESS));
 			}
 
 			// Check if any message queues are defined.
-			ConfigNode cn = cp.search(Queue.Constants.CONFIG_NODE_NAME);
+			ConfigNode cn = ConfigUtils.getConfigNode(cp, Queue.class, null);
 			if (cn != null)
 				configQueues(cn);
 
@@ -144,11 +140,10 @@ public class ServerContext implements Configurable {
 			ConfigValueList cv = (ConfigValueList) config;
 			for (ConfigNode n : cv.values()) {
 				if (!(n instanceof ConfigPath))
-					throw new ConfigurationException(
-							String.format(
-									"Invalid config node type. [expected:%s][actual:%s]",
-									ConfigPath.class.getCanonicalName(), config
-											.getClass().getCanonicalName()));
+					throw new ConfigurationException(String.format(
+							"Invalid config node type. [expected:%s][actual:%s]",
+							ConfigPath.class.getCanonicalName(),
+							config.getClass().getCanonicalName()));
 				configQueue((ConfigPath) n);
 			}
 		}
@@ -161,16 +156,8 @@ public class ServerContext implements Configurable {
 		// Completely typed queue sub-class should be defined and specified in
 		// the configuration.
 		try {
-			ConfigAttributes ca = ConfigUtils.attributes(config);
-			String name = ca.attribute(Queue.Constants.CONFIG_ATTR_NAME);
-			if (StringUtils.isEmpty(name))
-				throw new ConfigurationException("Missing attribute. [name="
-						+ Queue.Constants.CONFIG_ATTR_NAME + "]");
-			String clsname = ca.attribute(Queue.Constants.CONFIG_ATTR_CLASS);
-			if (StringUtils.isEmpty(clsname))
-				throw new ConfigurationException("Missing attribute. [name="
-						+ Queue.Constants.CONFIG_ATTR_CLASS + "]");
-			Class<?> cls = Class.forName(clsname);
+
+			Class<?> cls = ConfigUtils.getImplementingClass(config);
 			Object o = cls.newInstance();
 
 			if (!(o instanceof MessageQueue)) {
@@ -182,12 +169,8 @@ public class ServerContext implements Configurable {
 			MessageQueue<?> q = (MessageQueue) o;
 			q.configure(config);
 
-			queues.put(name, q);
-			LogUtils.debug(getClass(), "Added queue. [name=" + name + "]");
-		} catch (DataNotFoundException e) {
-			throw new ConfigurationException("Error initializing queue.", e);
-		} catch (ClassNotFoundException e) {
-			throw new ConfigurationException("Error initializing queue.", e);
+			queues.put(q.name(), q);
+			LogUtils.debug(getClass(), "Added queue. [name=" + q.name() + "]");
 		} catch (InstantiationException e) {
 			throw new ConfigurationException("Error initializing queue.", e);
 		} catch (IllegalAccessException e) {
@@ -202,8 +185,7 @@ public class ServerContext implements Configurable {
 	 */
 	public void startQueues() throws ServerException {
 		try {
-			ObjectState.check(state, EObjectState.Available,
-					getClass());
+			ObjectState.check(state, EObjectState.Available, getClass());
 			if (!queues.isEmpty()) {
 				for (String q : queues.keySet()) {
 					queues.get(q).start();
@@ -228,13 +210,12 @@ public class ServerContext implements Configurable {
 	 */
 	public MessageQueue<?> queue(String name) throws ServerException {
 		try {
-			ObjectState.check(state, EObjectState.Available,
-					getClass());
+			ObjectState.check(state, EObjectState.Available, getClass());
 
 			return queues.get(name);
 		} catch (StateException e) {
-			throw new ServerException(QueueRestServer.class,
-					"Invalid setState", e);
+			throw new ServerException(QueueRestServer.class, "Invalid setState",
+					e);
 		}
 	}
 
@@ -248,13 +229,12 @@ public class ServerContext implements Configurable {
 	 */
 	public boolean hasQueue(String name) throws ServerException {
 		try {
-			ObjectState.check(state, EObjectState.Available,
-					getClass());
+			ObjectState.check(state, EObjectState.Available, getClass());
 
 			return queues.containsKey(name);
 		} catch (StateException e) {
-			throw new ServerException(QueueRestServer.class,
-					"Invalid setState", e);
+			throw new ServerException(QueueRestServer.class, "Invalid setState",
+					e);
 		}
 	}
 

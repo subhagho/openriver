@@ -1,19 +1,17 @@
 /*
- *
- *  * Copyright 2014 Subhabrata Ghosh
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
+ * * Copyright 2014 Subhabrata Ghosh
+ * *
+ * * Licensed under the Apache License, Version 2.0 (the "License");
+ * * you may not use this file except in compliance with the License.
+ * * You may obtain a copy of the License at
+ * *
+ * * http://www.apache.org/licenses/LICENSE-2.0
+ * *
+ * * Unless required by applicable law or agreed to in writing, software
+ * * distributed under the License is distributed on an "AS IS" BASIS,
+ * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * * See the License for the specific language governing permissions and
+ * * limitations under the License.
  */
 
 package com.wookler.server.river;
@@ -21,6 +19,7 @@ package com.wookler.server.river;
 import com.wookler.server.common.Configurable;
 import com.wookler.server.common.LockTimeoutException;
 import com.wookler.server.common.ObjectState;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.river.AckCacheStructs.MessageAckRecord;
 
 import java.util.List;
@@ -31,16 +30,13 @@ import java.util.List;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14
  */
+@CPath(path = "queue")
 public interface Queue<M> extends Configurable {
 	public static class Constants {
-		public static final String CONFIG_NODE_NAME = "queue";
-		public static final String CONFIG_ATTR_NAME = "name";
-		public static final String CONFIG_ATTR_CLASS = "class";
-
 		public static final String MONITOR_NAMESPACE = "river.counters.queue";
 
-		public static final String MONITOR_COUNTER_ADDS = "adds";
-		public static final String MONITOR_COUNTER_ADDTIME = "time.add";
+		public static final String	MONITOR_COUNTER_ADDS	= "adds";
+		public static final String	MONITOR_COUNTER_ADDTIME	= "time.add";
 	}
 
 	/**
@@ -66,8 +62,8 @@ public interface Queue<M> extends Configurable {
 	 *            - Message to add.
 	 * @throws MessageQueueException
 	 */
-	public abstract void add(M message) throws MessageQueueException,
-			LockTimeoutException;
+	public abstract void add(M message)
+			throws MessageQueueException, LockTimeoutException;
 
 	/**
 	 * Add a batch of messages to the queue.
@@ -76,8 +72,8 @@ public interface Queue<M> extends Configurable {
 	 *            - List of Messages to add.
 	 * @throws MessageQueueException
 	 */
-	public abstract void add(List<M> messages) throws MessageQueueException,
-			LockTimeoutException;
+	public abstract void add(List<M> messages)
+			throws MessageQueueException, LockTimeoutException;
 
 	/**
 	 * Poll indefinitely till a message can be read from the queue.

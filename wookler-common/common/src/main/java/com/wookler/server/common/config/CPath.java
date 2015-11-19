@@ -16,15 +16,24 @@
 package com.wookler.server.common.config;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Annotation to be used for auto-wiring configurations.
+ * 
  * Created by subho on 16/11/15.
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
 public @interface CPath {
+	/**
+	 * Get the configuration node path defined for this type.
+	 * 
+	 * @return - Configuration node path, if defined.
+	 */
 	String path() default "";
 }

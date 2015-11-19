@@ -1,26 +1,25 @@
 /*
- *
- *  * Copyright 2014 Subhabrata Ghosh
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *
+ * * Copyright 2014 Subhabrata Ghosh
+ * *
+ * * Licensed under the Apache License, Version 2.0 (the "License");
+ * * you may not use this file except in compliance with the License.
+ * * You may obtain a copy of the License at
+ * *
+ * * http://www.apache.org/licenses/LICENSE-2.0
+ * *
+ * * Unless required by applicable law or agreed to in writing, software
+ * * distributed under the License is distributed on an "AS IS" BASIS,
+ * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * * See the License for the specific language governing permissions and
+ * * limitations under the License.
  */
 
 package com.wookler.server.river;
 
 import com.wookler.server.common.*;
+import com.wookler.server.common.config.CParam;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.common.config.ConfigNode;
-import com.wookler.server.common.config.ConfigParams;
 import com.wookler.server.common.config.ConfigPath;
 import com.wookler.server.common.config.ConfigUtils;
 import com.wookler.server.common.utils.Monitoring;
@@ -40,28 +39,26 @@ import org.slf4j.LoggerFactory;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14
  */
+@CPath(path = "processor")
 public abstract class Processor<M> implements Configurable {
 	private static final Logger log = LoggerFactory.getLogger(Processor.class);
 
 	public static class Constants {
-		public static final String CONFIG_NODE_NAME = "processor";
-
-		public static final String CONFIG_PARAM_IGNORE_EXCEPTION = "ignore.exception";
-
 		public static final String MONITOR_NAMESPACE = "river.counters.processor";
 
-		public static final String MONITOR_COUNTER_MESSAGES = "messages";
-		public static final String MONITOR_COUNTER_SUCCESS = "success";
-		public static final String MONITOR_COUNTER_FAILED = "failed";
-		public static final String MONITOR_COUNTER_EXCEPTION = "exceptions";
-		public static final String MONITOR_COUNTER_TIME = "time";
+		public static final String	MONITOR_COUNTER_MESSAGES	= "messages";
+		public static final String	MONITOR_COUNTER_SUCCESS		= "success";
+		public static final String	MONITOR_COUNTER_FAILED		= "failed";
+		public static final String	MONITOR_COUNTER_EXCEPTION	= "exceptions";
+		public static final String	MONITOR_COUNTER_TIME		= "time";
 	}
 
-	protected ProcessState state = new ProcessState();
-	private boolean ignoreException = true;
-	private String name;
-	private String id;
-	private HashMap<String, String[]> counters = new HashMap<String, String[]>();
+	protected ProcessState				state			= new ProcessState();
+	@CParam(name = "ignore.exception", required = false)
+	private boolean						ignoreException	= true;
+	private String						name;
+	private String						id;
+	private HashMap<String, String[]>	counters		= new HashMap<String, String[]>();
 
 	@Override
 	public void configure(ConfigNode config) throws ConfigurationException {
@@ -69,27 +66,15 @@ public abstract class Processor<M> implements Configurable {
 			if (!(config instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), config.getClass()
-								.getCanonicalName()));
-			try {
-				ConfigParams configparams = ConfigUtils.params(config);
-				HashMap<String, String> params = configparams.params();
-				if (params.containsKey(Constants.CONFIG_PARAM_IGNORE_EXCEPTION)) {
-					// Set exceptions to be ignored or not.
-					ignoreException = Boolean.parseBoolean(params
-							.get(Constants.CONFIG_PARAM_IGNORE_EXCEPTION));
-				}
-			} catch (DataNotFoundException e) {
-				// suppress exception, since params is optional at Processor
-				// level
-				log.info("Optional Config params node not specified for processor [ "
-						+ name + " ]");
-			}
+						ConfigPath.class.getCanonicalName(),
+						config.getClass().getCanonicalName()));
+			ConfigUtils.parse(config, this);
 			log.info("Ignore exception flag for processor [ " + name
 					+ " ] is set to [ " + ignoreException + " ]");
 		} catch (Exception ex) {
 			state.setState(EProcessState.Exception).setError(ex);
-			throw new ConfigurationException("Error configuring Processor.", ex);
+			throw new ConfigurationException("Error configuring Processor.",
+					ex);
 		}
 	}
 

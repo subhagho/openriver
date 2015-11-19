@@ -65,11 +65,11 @@ public class MessageStoreManager implements Configurable {
 		private File			baseDirectory;
 		@CParam(name = "queue.onstart.reload")
 		private boolean			recoverOnRestart	= true;
-		@CParam(name = "queue.recovery.threshold")
+		@CParam(name = "queue.recovery.threshold", required = false)
 		private int				recoveryThreshold	= 1;
-		@CParam(name = "queue.blocks.unused")
+		@CParam(name = "queue.blocks.unused", required = false)
 		private int				unusedBlocks		= 0;
-		@CParam(name = "queue.chronicle.size")
+		@CParam(name = "queue.chronicle.size", required = false)
 		private EChronicleSize	chronicleSize		= EChronicleSize.MEDIUM;
 
 		/**
@@ -187,8 +187,10 @@ public class MessageStoreManager implements Configurable {
 	private MonitoredLock qw_lock = new MonitoredLock();
 
 	private MessageBlockList				blocks;
+	@CParam(name = "recycle", nested = true)
 	private RecycleStrategy					strategy;
 	private ObjectState						state				= new ObjectState();
+	@CParam(name = "backup", nested = true)
 	private MessageBlockBackup				backup				= null;
 	private File							messagedir;
 	private HashMap<String, MessageBlock>	blocksSubscribed	= new HashMap<String, MessageBlock>();
@@ -239,11 +241,9 @@ public class MessageStoreManager implements Configurable {
 						+ mConfig.recoveryThreshold + "]");
 			}
 
-			// backup should be configured before setup(), since recovery might
-			// or might not require backup during setup()
-			configBackup(config);
-
-			configRecycle(config);
+			ConfigUtils.parse(config, this);
+			if (backup != null)
+				backup.setQname(storename);
 
 			ChronicleConfig cc = EChronicleSize
 					.get(mConfig.chronicleSize.name());
@@ -757,57 +757,92 @@ public class MessageStoreManager implements Configurable {
 		return b;
 	}
 
-	private void configBackup(ConfigNode config) throws ConfigurationException {
-		ConfigNode cn = ConfigUtils.getConfigNode(config,
-				MessageBlockBackup.class, null);
-		if (cn == null)
-			return;
-		backup = new MessageBlockBackup(storename);
-		backup.configure(cn);
+	/**
+	 * @return the strategy
+	 */
+	public RecycleStrategy getStrategy() {
+		return strategy;
 	}
 
-	private void configRecycle(ConfigNode config)
-			throws ConfigurationException {
-		try {
-			ConfigPath cp = (ConfigPath) config;
-			ConfigNode cn = cp
-					.search(RecycleStrategy.Constants.CONFIG_NODE_NAME);
-			if (cn == null)
-				throw new DataNotFoundException("Cannot find node. [node="
-						+ RecycleStrategy.Constants.CONFIG_NODE_NAME + "]");
-			ConfigAttributes attr = ConfigUtils.attributes(cn);
-			if (!attr.contains(StaticConstants.CONFIG_ATTR_CLASS))
-				throw new DataNotFoundException(
-						"Cannot find attribute. [attribute="
-								+ StaticConstants.CONFIG_ATTR_CLASS + "]");
-			String c = attr.attribute(StaticConstants.CONFIG_ATTR_CLASS);
-			LogUtils.debug(getClass(),
-					"[Recycle Strategy : Class = " + c + "]");
-			if (StringUtils.isEmpty(c))
-				throw new ConfigurationException("NULL/empty executor class.");
-			Class<?> cls = Class.forName(c);
-			Object o = cls.newInstance();
-
-			if (!(o instanceof RecycleStrategy))
-				throw new ConfigurationException(
-						"Invalid Recycle Strategy class specified. [class="
-								+ cls.getCanonicalName() + "]");
-
-			strategy = (RecycleStrategy) o;
-			strategy.configure(cn);
-
-		} catch (DataNotFoundException e) {
-			throw new ConfigurationException(
-					"Error finding configuration node.", e);
-		} catch (ClassNotFoundException e) {
-			throw new ConfigurationException(
-					"Error finding configuration node.", e);
-		} catch (InstantiationException e) {
-			throw new ConfigurationException(
-					"Error finding configuration node.", e);
-		} catch (IllegalAccessException e) {
-			throw new ConfigurationException(
-					"Error finding configuration node.", e);
-		}
+	/**
+	 * @param strategy
+	 *            the strategy to set
+	 */
+	public void setStrategy(RecycleStrategy strategy) {
+		this.strategy = strategy;
 	}
+
+	/**
+	 * @return the backup
+	 */
+	public MessageBlockBackup getBackup() {
+		return backup;
+	}
+
+	/**
+	 * @param backup
+	 *            the backup to set
+	 */
+	public void setBackup(MessageBlockBackup backup) {
+		this.backup = backup;
+	}
+
+	/**
+	 * @return the subscribers
+	 */
+	public HashMap<String, Subscriber<?>> getSubscribers() {
+		return subscribers;
+	}
+
+	/**
+	 * @param subscribers
+	 *            the subscribers to set
+	 */
+	public void setSubscribers(HashMap<String, Subscriber<?>> subscribers) {
+		this.subscribers = subscribers;
+	}
+
+	/*
+	 * private void configRecycle(ConfigNode config)
+	 * throws ConfigurationException {
+	 * try {
+	 * ConfigPath cp = (ConfigPath) config;
+	 * ConfigNode cn = cp
+	 * .search(RecycleStrategy.Constants.CONFIG_NODE_NAME);
+	 * if (cn == null)
+	 * throw new DataNotFoundException("Cannot find node. [node="
+	 * + RecycleStrategy.Constants.CONFIG_NODE_NAME + "]");
+	 * ConfigAttributes attr = ConfigUtils.attributes(cn);
+	 * if (!attr.contains(StaticConstants.CONFIG_ATTR_CLASS))
+	 * throw new DataNotFoundException(
+	 * "Cannot find attribute. [attribute="
+	 * + StaticConstants.CONFIG_ATTR_CLASS + "]");
+	 * String c = attr.attribute(StaticConstants.CONFIG_ATTR_CLASS);
+	 * LogUtils.debug(getClass(),
+	 * "[Recycle Strategy : Class = " + c + "]");
+	 * if (StringUtils.isEmpty(c))
+	 * throw new ConfigurationException("NULL/empty executor class.");
+	 * Class<?> cls = Class.forName(c);
+	 * Object o = cls.newInstance();
+	 * if (!(o instanceof RecycleStrategy))
+	 * throw new ConfigurationException(
+	 * "Invalid Recycle Strategy class specified. [class="
+	 * + cls.getCanonicalName() + "]");
+	 * strategy = (RecycleStrategy) o;
+	 * strategy.configure(cn);
+	 * } catch (DataNotFoundException e) {
+	 * throw new ConfigurationException(
+	 * "Error finding configuration node.", e);
+	 * } catch (ClassNotFoundException e) {
+	 * throw new ConfigurationException(
+	 * "Error finding configuration node.", e);
+	 * } catch (InstantiationException e) {
+	 * throw new ConfigurationException(
+	 * "Error finding configuration node.", e);
+	 * } catch (IllegalAccessException e) {
+	 * throw new ConfigurationException(
+	 * "Error finding configuration node.", e);
+	 * }
+	 * }
+	 */
 }

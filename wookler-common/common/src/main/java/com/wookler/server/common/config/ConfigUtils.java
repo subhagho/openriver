@@ -13,8 +13,10 @@
 
 package com.wookler.server.common.config;
 
+import com.wookler.server.common.Configurable;
 import com.wookler.server.common.ConfigurationException;
 import com.wookler.server.common.DataNotFoundException;
+import com.wookler.server.common.GlobalConstants;
 import com.wookler.server.common.utils.ReflectionUtils;
 
 import java.lang.reflect.Field;
@@ -203,6 +205,14 @@ public class ConfigUtils {
 		return (name.indexOf('@') > 0);
 	}
 
+	/**
+	 * Get the configuration path for the specified type based on the CPath
+	 * annotation.
+	 * 
+	 * @param type
+	 *            - Type to extract configuration for.
+	 * @return - Configuration node, NULL if not found.
+	 */
 	public static final String getConfigPath(Class<?> type) {
 		if (type.isAnnotationPresent(CPath.class)) {
 			return type.getAnnotation(CPath.class).path();
@@ -210,11 +220,38 @@ public class ConfigUtils {
 		return null;
 	}
 
+	/**
+	 * Auto-load the configuration from the node for the specified type
+	 * instance.
+	 * 
+	 * @param node
+	 *            - Configuration node, will search this node or extract the
+	 *            node based on the CPath annotation for the type.
+	 * @param source
+	 *            - Type instance to populate the configuration values into.
+	 * @return - Node the configuration elements were extracted from.
+	 * @throws ConfigurationException
+	 */
 	public static final ConfigNode parse(ConfigNode node, Object source)
 			throws ConfigurationException {
 		return parse(node, source, null);
 	}
 
+	/**
+	 * Auto-load the configuration from the node for the specified type
+	 * instance.
+	 * 
+	 * @param node
+	 *            - Configuration node, will search this node or extract the
+	 *            node based on the CPath annotation for the type or the
+	 *            specified path if not NULL.
+	 * @param source
+	 *            - Type instance to populate the configuration values into.
+	 * @param path
+	 *            - Override the configuration path.
+	 * @return - Node the configuration elements were extracted from.
+	 * @throws ConfigurationException
+	 */
 	public static final ConfigNode parse(ConfigNode node, Object source,
 			String path) throws ConfigurationException {
 		node = getConfigNode(node, source.getClass(), path);
@@ -230,27 +267,69 @@ public class ConfigUtils {
 				for (Field f : fields) {
 					if (f.isAnnotationPresent(CParam.class)) {
 						CParam p = f.getAnnotation(CParam.class);
-						String pn = p.name();
-						String value = null;
-						if (!StringUtils.isEmpty(pn)) {
-							if (pn.startsWith("@")) {
-								if (attrs == null) {
-									attrs = attributes(node);
+						if (!p.nested()) {
+							String pn = p.name();
+							String value = null;
+							if (!StringUtils.isEmpty(pn)) {
+								if (pn.startsWith("@")) {
+									if (attrs == null) {
+										attrs = attributes(node);
+									}
+									pn = pn.replace("@", "");
+									value = attrs.attribute(pn);
+								} else {
+									if (params == null) {
+										params = params(node);
+									}
+									value = params.param(pn);
 								}
-								pn = pn.replace("@", "");
-								value = attrs.attribute(pn);
-							} else {
-								if (params == null) {
-									params = params(node);
+								if (!StringUtils.isEmpty(value)) {
+									Object ret = ReflectionUtils
+											.setValueFromString(value, source,
+													f);
+									if (ret instanceof Configurable) {
+										configureInstance((Configurable) ret,
+												node, null);
+									}
+								} else if (p.required()) {
+									throw new ConfigurationException(
+											"Missing required parameter/attribute. [name="
+													+ pn + "][path="
+													+ node.getAbsolutePath()
+													+ "]");
 								}
-								value = params.param(pn);
 							}
-							if (!StringUtils.isEmpty(value)) {
-								ReflectionUtils.setValueFromString(value,
-										source, f);
+						} else {
+							if (!(node instanceof ConfigPath))
+								throw new ConfigurationException(
+										"Expected configuration path node. [path="
+												+ node.getAbsolutePath() + "]");
+							ConfigPath cp = (ConfigPath) node;
+							String pn = p.name();
+							ConfigNode cnode = cp.search(pn);
+							if (cnode != null) {
+								Class<?> ctype = ConfigUtils
+										.getImplementingClass(cnode, false);
+								if (ctype == null)
+									ctype = f.getType();
+								else if (!f.getType().isAssignableFrom(ctype)) {
+									throw new ConfigurationException(
+											"Cannot assign type ["
+													+ ctype.getCanonicalName()
+													+ "] to ["
+													+ f.getType()
+															.getCanonicalName()
+													+ "]");
+								}
+								Object obj = ctype.newInstance();
+								if (obj instanceof Configurable) {
+									configureInstance((Configurable) obj, cnode,
+											null);
+								}
+								ReflectionUtils.setObjectValue(source, f, obj);
 							} else if (p.required()) {
 								throw new ConfigurationException(
-										"Missing required parameter/attribute. [name="
+										"Missing required configuration node. [name="
 												+ pn + "][path="
 												+ node.getAbsolutePath() + "]");
 							}
@@ -262,9 +341,41 @@ public class ConfigUtils {
 		} catch (DataNotFoundException e) {
 			throw new ConfigurationException(
 					"Error parsing configuration data.", e);
+		} catch (InstantiationException e) {
+			throw new ConfigurationException(
+					"Error parsing configuration data.", e);
+		} catch (IllegalAccessException e) {
+			throw new ConfigurationException(
+					"Error parsing configuration data.", e);
+		} catch (Exception e) {
+			throw new ConfigurationException(
+					"Error parsing configuration data.", e);
 		}
 	}
 
+	public static final ConfigNode configureInstance(Configurable source,
+			ConfigNode config, String path) throws ConfigurationException {
+		ConfigNode node = ConfigUtils.getConfigNode(config, source.getClass(),
+				path);
+		if (node != null) {
+			source.configure(node);
+		}
+		return node;
+	}
+
+	/**
+	 * Get the configuration node element for the specified type. Uses the CPath
+	 * element for the path or the path parameter (if not NULL).
+	 * 
+	 * @param node
+	 *            - Node to search for the path.
+	 * @param type
+	 *            - Class type to extract configuration for.
+	 * @param path
+	 *            - Override the path extracted from the type.
+	 * @return - Configuration node element, or NULL if not found.
+	 * @throws ConfigurationException
+	 */
 	public static final ConfigNode getConfigNode(ConfigNode node, Class<?> type,
 			String path) throws ConfigurationException {
 		if (StringUtils.isEmpty(path)
@@ -282,5 +393,65 @@ public class ConfigUtils {
 				node = pp.search(path);
 		}
 		return node;
+	}
+
+	/**
+	 * Extract the "class" implementation class attribute from the
+	 * configuration.
+	 * 
+	 * @param node
+	 *            - Configuration node.
+	 * @param required
+	 *            - Is this mandatory?
+	 * @return - Type value
+	 * @throws ConfigurationException
+	 *             - If no class attribute found and is mandatory, will raise an
+	 *             exception.
+	 */
+	public static final Class<?> getImplementingClass(ConfigNode node,
+			boolean required) throws ConfigurationException {
+		try {
+			if (node != null && node instanceof ConfigPath) {
+				try {
+					ConfigAttributes attrs = attributes(node);
+					if (attrs != null) {
+						if (attrs.contains(GlobalConstants.CONFIG_ATTR_CLASS)) {
+							String c = attrs.attribute(
+									GlobalConstants.CONFIG_ATTR_CLASS);
+							if (StringUtils.isEmpty(c)) {
+								throw new ConfigurationException(
+										"NULL/empty class attribute specified.");
+							}
+							return Class.forName(c);
+						}
+					}
+				} catch (DataNotFoundException e) {
+					// Do nothing...
+				}
+			}
+		} catch (Exception e) {
+			throw new ConfigurationException(
+					"Error getting implementing class.", e);
+		}
+		if (required)
+			throw new ConfigurationException(
+					"No defined implementing class found. [path="
+							+ node.getAbsolutePath() + "]");
+		return null;
+	}
+
+	/**
+	 * Extract the "class" implementation class attribute from the
+	 * configuration.
+	 * 
+	 * @param node
+	 *            - Configuration node.
+	 * @return - Type value
+	 * @throws ConfigurationException
+	 *             - If no class attribute found, will raise an exception.
+	 */
+	public static final Class<?> getImplementingClass(ConfigNode node)
+			throws ConfigurationException {
+		return getImplementingClass(node, true);
 	}
 }

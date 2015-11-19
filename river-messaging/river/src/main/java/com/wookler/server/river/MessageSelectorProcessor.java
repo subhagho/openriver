@@ -188,21 +188,13 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
     private Processor<M> configProcessor(ConfigNode node) throws ConfigurationException {
         try {
             if (node instanceof ConfigPath) {
-                ConfigPath pcp = (ConfigPath) node;
-                ConfigAttributes pca = ConfigUtils.attributes(pcp);
-                String s = pca.attribute(Subscriber.Constants.CONFIG_NAME);
-                if (StringUtils.isEmpty(s))
-                    throw new ConfigurationException("Processor name not defined in configuration.");
-                String pname = s;
-                s = pca.attribute(StaticConstants.CONFIG_ATTR_CLASS);
-                if (StringUtils.isEmpty(s))
-                    throw new ConfigurationException("Processor class not defined in configuration.");
-                Class<?> cls = Class.forName(s);
+            	ConfigNode cnode = ConfigUtils.getConfigNode(node, Processor.class, null);
+
+            	Class<?> cls = ConfigUtils.getImplementingClass(cnode);
                 Object o = cls.newInstance();
                 if (!(o instanceof Processor))
                     throw new ConfigurationException("Invalid Processor class specified. [class=" + cls.getCanonicalName() + "]");
                 Processor<M> p = (Processor<M>) o;
-                p.name(pname);
                 if (o instanceof SubscriberAwareProcessor) {
                     ((SubscriberAwareProcessor<M>) p).setSubscriber(this.getSubscriber());
                 }
@@ -210,10 +202,6 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
                 return p;
             } else
                 throw new ConfigurationException("Invalid configuration node. Expected Path node.");
-        } catch (DataNotFoundException e) {
-            throw new ConfigurationException("Invalid Processor configuration.", e);
-        } catch (ClassNotFoundException e) {
-            throw new ConfigurationException("Invalid Processor class specified.", e);
         } catch (InstantiationException e) {
             throw new ConfigurationException("Invalid Processor class specified.", e);
         } catch (IllegalAccessException e) {

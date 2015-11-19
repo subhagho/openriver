@@ -24,7 +24,6 @@ import com.wookler.server.common.StateException;
 import com.wookler.server.common.config.*;
 import com.wookler.server.common.utils.LogUtils;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,16 +109,9 @@ public class MessageProcessor<M> extends Subscriber<M> {
 						"Cannot executor configuration node. [path="
 								+ config.getAbsolutePath() + "]");
 
-			ConfigAttributes attr = ConfigUtils.attributes(cn);
-			if (!attr.contains(StaticConstants.CONFIG_ATTR_CLASS))
-				throw new DataNotFoundException(
-						"Cannot find attribute. [attribute="
-								+ StaticConstants.CONFIG_ATTR_CLASS + "]");
-			String c = attr.attribute(StaticConstants.CONFIG_ATTR_CLASS);
-			LogUtils.debug(getClass(), "[Executor Class = " + c + "]");
-			if (StringUtils.isEmpty(c))
-				throw new ConfigurationException("NULL/empty executor class.");
-			Class<?> cls = Class.forName(c);
+			Class<?> cls = ConfigUtils.getImplementingClass(cn);
+			LogUtils.debug(getClass(),
+					"[Executor Class = " + cls.getCanonicalName() + "]");
 			Object o = cls.newInstance();
 
 			if (!(o instanceof AbstractExecutor))
@@ -134,9 +126,6 @@ public class MessageProcessor<M> extends Subscriber<M> {
 		} catch (DataNotFoundException e) {
 			throw new ConfigurationException(
 					"Error configuring Message Processor.", e);
-		} catch (ClassNotFoundException e) {
-			throw new ConfigurationException(
-					"Error configuring Message Processor.", e);
 		} catch (InstantiationException e) {
 			throw new ConfigurationException(
 					"Error configuring Message Processor.", e);
@@ -148,9 +137,8 @@ public class MessageProcessor<M> extends Subscriber<M> {
 
 	private void configProcessors(ConfigNode config)
 			throws ConfigurationException {
-		ConfigPath cp = (ConfigPath) config;
-		ConfigNode cn = cp.search(Processor.Constants.CONFIG_NODE_NAME);
-
+		ConfigNode cn = ConfigUtils.getConfigNode(config, Processor.class,
+				null);
 		if (cn != null) {
 			if (cn instanceof ConfigPath) {
 				Processor<M> p = configProcessor(cn);
@@ -169,7 +157,7 @@ public class MessageProcessor<M> extends Subscriber<M> {
 			}
 		} else {
 			LogUtils.warn(getClass(), String.format(
-					"No processors registered. [node=%s]", cp.toString()));
+					"No processors registered. [node=%s]", config.toString()));
 		}
 
 	}
@@ -179,18 +167,9 @@ public class MessageProcessor<M> extends Subscriber<M> {
 			throws ConfigurationException {
 		try {
 			if (node instanceof ConfigPath) {
-				ConfigPath pcp = (ConfigPath) node;
-				ConfigAttributes pca = ConfigUtils.attributes(pcp);
-				String s = pca.attribute(Subscriber.Constants.CONFIG_NAME);
-				if (StringUtils.isEmpty(s))
-					throw new ConfigurationException(
-							"Processor name not defined in configuration.");
-				String pname = s;
-				s = pca.attribute(StaticConstants.CONFIG_ATTR_CLASS);
-				if (StringUtils.isEmpty(s))
-					throw new ConfigurationException(
-							"Processor class not defined in configuration.");
-				Class<?> cls = Class.forName(s);
+				ConfigNode pn = ConfigUtils.getConfigNode(node, Processor.class,
+						null);
+				Class<?> cls = ConfigUtils.getImplementingClass(pn);
 				LogUtils.debug(getClass(), String.format(
 						"[PROCESSOR CLASS : %s]", cls.getCanonicalName()));
 
@@ -200,7 +179,6 @@ public class MessageProcessor<M> extends Subscriber<M> {
 							"Invalid Processor class specified. [class="
 									+ cls.getCanonicalName() + "]");
 				Processor<M> p = (Processor<M>) o;
-				p.name(pname);
 				if (o instanceof SubscriberAwareProcessor) {
 					((SubscriberAwareProcessor<M>) p).setSubscriber(this);
 				}
@@ -210,12 +188,6 @@ public class MessageProcessor<M> extends Subscriber<M> {
 				throw new ConfigurationException(
 						"Invalid configuration node. Expected Path node.");
 			}
-		} catch (DataNotFoundException e) {
-			throw new ConfigurationException("Invalid Processor configuration.",
-					e);
-		} catch (ClassNotFoundException e) {
-			throw new ConfigurationException(
-					"Invalid Processor class specified.", e);
 		} catch (InstantiationException e) {
 			throw new ConfigurationException(
 					"Invalid Processor class specified.", e);

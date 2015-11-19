@@ -128,10 +128,11 @@ public class ReflectionUtils {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static final void setValueFromString(String value, Object source,
+	public static final Object setValueFromString(String value, Object source,
 			Field f) throws ConfigurationException {
 		Preconditions.checkArgument(!StringUtils.isEmpty(value));
 		try {
+			Object retV = value;
 			Class<?> type = f.getType();
 			if (ReflectionUtils.isPrimitiveTypeOrClass(f)) {
 				ReflectionUtils.setPrimitiveValue(value, source, f);
@@ -141,13 +142,30 @@ public class ReflectionUtils {
 				Class<Enum> et = (Class<Enum>) type;
 				Object ev = Enum.valueOf(et, value);
 				ReflectionUtils.setObjectValue(source, f, ev);
+				retV = ev;
 			} else if (type.equals(File.class)) {
 				File file = new File(value);
 				ReflectionUtils.setObjectValue(source, f, file);
+				retV = file;
 			} else if (type.equals(Class.class)) {
 				Class<?> cls = Class.forName(value.trim());
 				ReflectionUtils.setObjectValue(source, f, cls);
+				retV = cls;
+			} else {
+				Class<?> cls = Class.forName(value.trim());
+				if (type.isAssignableFrom(cls)) {
+					Object o = cls.newInstance();
+					ReflectionUtils.setObjectValue(source, f, o);
+					retV = o;
+				} else {
+					throw new InstantiationException(
+							"Cannot create instance of type [type="
+									+ cls.getCanonicalName()
+									+ "] and assign to field [field="
+									+ f.getName() + "]");
+				}
 			}
+			return retV;
 		} catch (Exception e) {
 			throw new ConfigurationException(
 					"Error setting object value : [type="

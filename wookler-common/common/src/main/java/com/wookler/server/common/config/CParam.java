@@ -21,22 +21,34 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Annotation to be used to define configuration mapping for auto-wired
+ * configuration elements.
  * Created by subho on 16/11/15.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD })
 public @interface CParam {
 	/**
-	 * TODO: <comment>
+	 * Get the configuration element name. By default it maps to defined
+	 * parameters. For mapping to attributes prefix the name with @.
 	 * 
-	 * @return
+	 * @return - Mapping element name.
 	 */
 	String name();
 
 	/**
-	 * TODO: <comment>
+	 * Is this element required, will raise an exception if element is not found
+	 * in the configuration. By default all elements are assumed to be required
+	 * unless specified.
 	 * 
-	 * @return
+	 * @return - Is mandatory?
 	 */
 	boolean required() default true;
+
+	/**
+	 * This field refers to a nested configuration definitions?
+	 * 
+	 * @return - Is nested?
+	 */
+	boolean nested() default false;
 }

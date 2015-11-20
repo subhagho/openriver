@@ -29,6 +29,7 @@ import com.wookler.server.common.DataNotFoundException;
 import com.wookler.server.common.EProcessState;
 import com.wookler.server.common.GlobalConstants;
 import com.wookler.server.common.ProcessState;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.common.config.ConfigAttributes;
 import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigPath;
@@ -50,6 +51,7 @@ import com.wookler.server.common.utils.LogUtils;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 08/09/14
  */
+@CPath(path="selector")
 public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
     private static final Logger log = LoggerFactory.getLogger(MessageSelectorProcessor.class);
 
@@ -87,7 +89,7 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
                             mr = r.messages().get(0);
                         } else if (r.response() == EProcessResponse.Exception || r.response() == EProcessResponse.Failed) {
                             LogUtils.warn(getClass(),
-                                    String.format("Processor error [%s] : %s", r.response().name(), r.response().error().getLocalizedMessage()));
+                                    String.format("Processor error [%s] : %s", r.response().name(), r.error().getLocalizedMessage()));
                         }
                     }
                 }
@@ -99,7 +101,8 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
             }
             response.response(EProcessResponse.Success);
         } catch (Exception e) {
-            response.response(EProcessResponse.Failed.error(e));
+            response.response(EProcessResponse.Failed);
+            response.error(e, this.getClass().getCanonicalName());
             response.messages(null);
             LogUtils.stacktrace(getClass(), e, log);
             throw new NonFatalProcessorException("Exception in applying selector processors");

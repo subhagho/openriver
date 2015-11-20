@@ -17,6 +17,7 @@
 package com.wookler.server.river;
 
 import com.wookler.server.common.Configurable;
+import com.wookler.server.common.config.CPath;
 
 /**
  * Interface to be implemented if message filter events are to be handled.
@@ -24,6 +25,7 @@ import com.wookler.server.common.Configurable;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 08/09/14
  */
+@CPath(path="filter-handler")
 public interface MessageFilterHandler<M> extends Configurable {
     /**
      * Handle a message filter event.

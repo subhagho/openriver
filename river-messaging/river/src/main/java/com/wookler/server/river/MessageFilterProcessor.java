@@ -1,12 +1,9 @@
 /*
  * Copyright [2014] Subhabrata Ghosh
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,6 +29,8 @@ import com.wookler.server.common.DataNotFoundException;
 import com.wookler.server.common.EProcessState;
 import com.wookler.server.common.GlobalConstants;
 import com.wookler.server.common.ProcessState;
+import com.wookler.server.common.config.CParam;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.common.config.ConfigAttributes;
 import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigPath;
@@ -49,23 +48,25 @@ import com.wookler.server.common.utils.Monitoring;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 08/09/14
  */
+@CPath(path = "query")
 public class MessageFilterProcessor<M> extends Processor<M> {
 	private static final Logger log = LoggerFactory
 			.getLogger(MessageFilterProcessor.class);
 
 	public static final class Constants {
-		public static final String CONFIG_NODE_QUERY = "query";
-		public static final String CONFIG_ATTR_QUERY = "q";
-		public static final String CONFIG_NODE_HANDLER = "filter-handler";
+		public static final String	CONFIG_NODE_QUERY	= "query";
+		public static final String	CONFIG_ATTR_QUERY	= "q";
+		public static final String	CONFIG_NODE_HANDLER	= "filter-handler";
 
 		public static final String MONITOR_NAMESPACE = "river.counters.filter.processor";
 
 		public static final String MONITOR_COUNTER_INVALIDS = "invalids";
 	}
 
-	private HashMap<String, String[]> counters = new HashMap<String, String[]>();
-	private List<Filter<M>> queries = new LinkedList<Filter<M>>();
-	private MessageFilterHandler<M> handler = null;
+	private HashMap<String, String[]>	counters	= new HashMap<String, String[]>();
+	private List<Filter<M>>				queries		= new LinkedList<Filter<M>>();
+	@CParam(name = "filter-handler", nested = true, required = false)
+	private MessageFilterHandler<M>		handler		= null;
 
 	/**
 	 * Apply the defined query filters on the specified list of messages.
@@ -103,7 +104,8 @@ public class MessageFilterProcessor<M> extends Processor<M> {
 			}
 			response.response(EProcessResponse.Success);
 		} catch (Exception e) {
-			response.response(EProcessResponse.Failed.error(e));
+			response.response(EProcessResponse.Failed).error(e,
+					handler.getClass().getCanonicalName());
 			response.messages(null);
 			LogUtils.stacktrace(getClass(), e, log);
 			throw new NonFatalProcessorException(
@@ -149,14 +151,10 @@ public class MessageFilterProcessor<M> extends Processor<M> {
 		if (!(c instanceof ConfigPath))
 			throw new ConfigurationException(String.format(
 					"Invalid config node type. [expected:%s][actual:%s]",
-					ConfigPath.class.getCanonicalName(), c.getClass()
-							.getCanonicalName()));
+					ConfigPath.class.getCanonicalName(),
+					c.getClass().getCanonicalName()));
 		LogUtils.debug(getClass(), ((ConfigPath) c).path());
-		ConfigPath cp = (ConfigPath) c;
-		ConfigNode config = cp.search(Constants.CONFIG_NODE_QUERY);
-		if (config == null)
-			throw new ConfigurationException(
-					"No query filter conditions defined.");
+		ConfigNode config = ConfigUtils.parse(c, this);
 
 		if (config instanceof ConfigPath) {
 			createQuery(config);
@@ -169,51 +167,10 @@ public class MessageFilterProcessor<M> extends Processor<M> {
 				}
 			}
 		}
-		ConfigNode ch = cp.search(Constants.CONFIG_NODE_HANDLER);
-		if (ch != null) {
-			configFilterHandler(ch);
-		}
 
 		registerCounters();
 
 		state.setState(EProcessState.Running);
-	}
-
-	@SuppressWarnings("unchecked")
-	private void configFilterHandler(ConfigNode node)
-			throws ConfigurationException {
-		try {
-			if (!(node instanceof ConfigPath))
-				throw new ConfigurationException(String.format(
-						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), node.getClass()
-								.getCanonicalName()));
-			LogUtils.debug(getClass(), ((ConfigPath) node).path());
-			ConfigAttributes ca = ConfigUtils.attributes(node);
-			String c = ca.attribute(GlobalConstants.CONFIG_ATTR_CLASS);
-			if (StringUtils.isEmpty(c))
-				throw new ConfigurationException("Missing attribute. [name="
-						+ GlobalConstants.CONFIG_ATTR_CLASS + "]");
-
-			Class<?> cls = Class.forName(c);
-			Object o = cls.newInstance();
-			if (!(o instanceof MessageFilterHandler))
-				throw new ConfigurationException(
-						"Invalid message filter handler specified. [class="
-								+ cls.getCanonicalName() + "]");
-			handler = (MessageFilterHandler<M>) o;
-		} catch (ClassNotFoundException e) {
-			throw new ConfigurationException("Invalid Query class specified.",
-					e);
-		} catch (InstantiationException e) {
-			throw new ConfigurationException("Invalid Query class specified.",
-					e);
-		} catch (IllegalAccessException e) {
-			throw new ConfigurationException("Invalid Query class specified.",
-					e);
-		} catch (DataNotFoundException e) {
-			throw new ConfigurationException("Invalid Query definition.", e);
-		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -222,8 +179,8 @@ public class MessageFilterProcessor<M> extends Processor<M> {
 			if (!(node instanceof ConfigPath))
 				throw new ConfigurationException(String.format(
 						"Invalid config node type. [expected:%s][actual:%s]",
-						ConfigPath.class.getCanonicalName(), node.getClass()
-								.getCanonicalName()));
+						ConfigPath.class.getCanonicalName(),
+						node.getClass().getCanonicalName()));
 			LogUtils.debug(getClass(), ((ConfigPath) node).path());
 			ConfigAttributes ca = ConfigUtils.attributes(node);
 			String c = ca.attribute(GlobalConstants.CONFIG_ATTR_CLASS);

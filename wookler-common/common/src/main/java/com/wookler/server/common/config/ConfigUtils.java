@@ -254,10 +254,13 @@ public class ConfigUtils {
 	 */
 	public static final ConfigNode parse(ConfigNode node, Object source,
 			String path) throws ConfigurationException {
+		ConfigNode onode = node;
 		node = getConfigNode(node, source.getClass(), path);
 		if (node == null)
 			throw new ConfigurationException(
-					"Error finding configuration node for type.");
+					"Error finding configuration node for type. [path="
+							+ onode.getAbsolutePath() + "][type="
+							+ source.getClass().getCanonicalName() + "]");
 		try {
 			Class<?> type = source.getClass();
 			Field[] fields = ReflectionUtils.getAllFields(type);

@@ -89,8 +89,7 @@ public class Test_RecycledFileOutput {
 				throw new Exception("Cannot find configuration node. [node="
 						+ CONFIG_PATH_RECYCLE + "][path="
 						+ config.node().getAbsolutePath() + "]");
-			RecycledFileOutput rf = new RecycledFileOutput(
-					"/tmp/test/recycle/test-recycle.txt");
+			RecycledFileOutput rf = new RecycledFileOutput();
 			rf.configure(cn);
 
 			for (int ii = 0; ii < 10000; ii++) {

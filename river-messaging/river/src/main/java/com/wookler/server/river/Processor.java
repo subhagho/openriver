@@ -56,6 +56,7 @@ public abstract class Processor<M> implements Configurable {
 	protected ProcessState				state			= new ProcessState();
 	@CParam(name = "ignore.exception", required = false)
 	private boolean						ignoreException	= true;
+	@CParam(name = "@name")
 	private String						name;
 	private String						id;
 	private HashMap<String, String[]>	counters		= new HashMap<String, String[]>();

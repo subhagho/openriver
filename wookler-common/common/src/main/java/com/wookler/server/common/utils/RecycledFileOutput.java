@@ -26,6 +26,7 @@ import com.wookler.server.common.Task.TaskException;
 import com.wookler.server.common.TaskState;
 import com.wookler.server.common.TaskState.ETaskState;
 import com.wookler.server.common.config.CParam;
+import com.wookler.server.common.config.CPath;
 import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigUtils;
 
@@ -35,57 +36,28 @@ import com.wookler.server.common.config.ConfigUtils;
  * @author subho
  * @date 18-Nov-2015
  */
+@CPath(path = "recycled-file")
 public class RecycledFileOutput implements Configurable {
 	private static final Logger log = LoggerFactory
 			.getLogger(RecycledFileOutput.class);
 
-	public static final class RecycleFileConfig {
-		@CParam(name = "@strategy", required = false)
-		private Class<?>	recycleStrategyType;
-		@CParam(name = "@backup", required = false)
-		private boolean		backup	= false;
-
-		/**
-		 * @return the recycleStrategyType
-		 */
-		public Class<?> getRecycleStrategyType() {
-			return recycleStrategyType;
-		}
-
-		/**
-		 * @param recycleStrategyType
-		 *            the recycleStrategyType to set
-		 */
-		public void setRecycleStrategyType(Class<?> recycleStrategyType) {
-			this.recycleStrategyType = recycleStrategyType;
-		}
-
-		/**
-		 * @return the backup
-		 */
-		public boolean isBackup() {
-			return backup;
-		}
-
-		/**
-		 * @param backup
-		 *            the backup to set
-		 */
-		public void setBackup(boolean backup) {
-			this.backup = backup;
-		}
-	}
-
+	@CParam(name = "recycleStrategy", required = false, nested = true)
 	private FileRecycleStrategy	recycleStrategy;
 	private File				directory;
+	@CParam(name = "@filename", required = false)
 	private File				file;
 	private FileOutputStream	stream;
+	@CParam(name = "@append", required = false)
 	private boolean				append		= false;
+	@CParam(name = "backup", required = false, nested = true)
 	private FileBackupHelper	backupHelper;
 	private ReentrantLock		recycleLock	= new ReentrantLock();
 	private AtomicInteger		sequence	= new AtomicInteger(0);
 	private Queue<File>			backupQueue	= null;
 	private Runner				runner		= null;
+
+	public RecycledFileOutput() {
+	}
 
 	/**
 	 * TODO: <comment>
@@ -129,26 +101,12 @@ public class RecycledFileOutput implements Configurable {
 	@Override
 	public void configure(ConfigNode config) throws ConfigurationException {
 		try {
-			RecycleFileConfig cf = new RecycleFileConfig();
-			ConfigUtils.parse(config, cf);
-
-			if (recycleStrategy == null) {
-				if (cf.recycleStrategyType == null)
-					throw new ConfigurationException(
-							"Missing Recycle Strategy definition.");
-				Object o = cf.recycleStrategyType.newInstance();
-				if (!(o instanceof FileRecycleStrategy))
-					throw new ConfigurationException(
-							"Invalid File Recycle strategy type. [type="
-									+ cf.recycleStrategyType.getCanonicalName()
-									+ "]");
-				recycleStrategy = (FileRecycleStrategy) o;
-				recycleStrategy.configure(config);
+			boolean doSetup = (file == null);
+			ConfigUtils.parse(config, this);
+			if (doSetup) {
+				this.directory = file.getParentFile();
 			}
-			if (cf.backup) {
-				backupHelper = new FileBackupHelper();
-				backupHelper.configure(config);
-
+			if (backupHelper != null) {
 				backupQueue = new LinkedBlockingQueue<>();
 				runner = new Runner(backupQueue, backupHelper);
 				Env.get().taskmanager().addtask(runner);
@@ -373,5 +331,80 @@ public class RecycledFileOutput implements Configurable {
 					&& System.currentTimeMillis() - lastRunTime > runInterval
 					&& !backupQueue.isEmpty());
 		}
+	}
+
+	/**
+	 * @return the recycleStrategy
+	 */
+	public FileRecycleStrategy getRecycleStrategy() {
+		return recycleStrategy;
+	}
+
+	/**
+	 * @param recycleStrategy
+	 *            the recycleStrategy to set
+	 */
+	public void setRecycleStrategy(FileRecycleStrategy recycleStrategy) {
+		this.recycleStrategy = recycleStrategy;
+	}
+
+	/**
+	 * @return the directory
+	 */
+	public File getDirectory() {
+		return directory;
+	}
+
+	/**
+	 * @param directory
+	 *            the directory to set
+	 */
+	public void setDirectory(File directory) {
+		this.directory = directory;
+	}
+
+	/**
+	 * @return the append
+	 */
+	public boolean isAppend() {
+		return append;
+	}
+
+	/**
+	 * @param append
+	 *            the append to set
+	 */
+	public void setAppend(boolean append) {
+		this.append = append;
+	}
+
+	/**
+	 * @return the backupHelper
+	 */
+	public FileBackupHelper getBackupHelper() {
+		return backupHelper;
+	}
+
+	/**
+	 * @param backupHelper
+	 *            the backupHelper to set
+	 */
+	public void setBackupHelper(FileBackupHelper backupHelper) {
+		this.backupHelper = backupHelper;
+	}
+
+	/**
+	 * @return the file
+	 */
+	public File getFile() {
+		return file;
+	}
+
+	/**
+	 * @param file
+	 *            the file to set
+	 */
+	public void setFile(File file) {
+		this.file = file;
 	}
 }

@@ -26,9 +26,10 @@
 				</params>
 			</auto>
 		</test>
-		<recycled-file backup="true"
-			strategy="com.wookler.server.common.utils.FileSizeRecycleStrategy">
-			<recycleStrategy>
+		<recycled-file filename="/tmp/test/recycle/test-recycle.txt"
+			append="true">
+			<recycleStrategy
+				class="com.wookler.server.common.utils.FileSizeRecycleStrategy">
 				<params>
 					<param name="size" value="10000" />
 				</params>

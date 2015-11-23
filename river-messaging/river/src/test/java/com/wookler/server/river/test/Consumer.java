@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 20/08/14
  */
+//@CPath(path = "consumer")
 public class Consumer extends Processor<String>implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(Consumer.class);
 
@@ -47,9 +48,9 @@ public class Consumer extends Processor<String>implements Runnable {
 	private int					count	= 0;
 	@CParam(name = "processor.sleep", required = false)
 	private long				sleept	= -1;
-	@CParam(name = "queue.pull.name")
-	private String				qname;
-	private Subscriber<String>	queue;
+	@CParam(name = "subscriber.pull.name")
+	private String				subscriberName;
+	private Subscriber<String>	subscriber;
 	private int					bcount	= 0;
 
 	private long			r_time	= 0;
@@ -88,26 +89,22 @@ public class Consumer extends Processor<String>implements Runnable {
 	}
 
 	/**
-	 * @return the qname
+	 * @return the subscriberName
 	 */
-	public String getQname() {
-		return qname;
+	public String getSubscriberName() {
+		return subscriberName;
 	}
 
 	/**
-	 * @param qname
-	 *            the qname to set
+	 * @param subscriberName
+	 *            the subscriberName to set
 	 */
-	public void setQname(String qname) {
-		this.qname = qname;
+	public void setSubscriberName(String subscriberName) {
+		this.subscriberName = subscriberName;
 	}
 
-	public String qname() {
-		return qname;
-	}
-
-	public Consumer queue(Subscriber<String> queue) {
-		this.queue = queue;
+	public Consumer subscriber(Subscriber<String> subscriber) {
+		this.subscriber = subscriber;
 
 		return this;
 	}
@@ -186,7 +183,7 @@ public class Consumer extends Processor<String>implements Runnable {
 			if (StringUtils.isEmpty(directory))
 				throw new ConfigurationException(
 						"Missing directory parameter.");
-			directory = String.format("%s/%s", directory, qname);
+			directory = String.format("%s/%s", directory, subscriberName);
 			File f = new File(directory);
 			if (!f.exists()) {
 				f.mkdirs();
@@ -219,7 +216,7 @@ public class Consumer extends Processor<String>implements Runnable {
 	@Override
 	public void run() {
 		try {
-			MessagePullSubscriber<String> puller = (MessagePullSubscriber<String>) queue;
+			MessagePullSubscriber<String> puller = (MessagePullSubscriber<String>) subscriber;
 			long lastread = System.currentTimeMillis();
 			while (true) {
 				if (System.currentTimeMillis()

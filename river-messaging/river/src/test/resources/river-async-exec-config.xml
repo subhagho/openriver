@@ -79,14 +79,14 @@
                 </executor>
                 <processor name="TEST-EXEC-CONSUMER-1" class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-ASYNC-SUBSCRIBER-1" />
+                        <param name="subscriber.pull.name" value="TEST-RIVER-ASYNC-SUBSCRIBER-1" />
                         <param name="directory.output" value="/tmp/river/test/pull" />
                         <param name="processor.sleep" value="-1" />
                     </params>
                 </processor>
                 <processor name="TEST-EXEC-CONSUMER-2" class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-ASYNC-SUBSCRIBER-1" />
+                        <param name="subscriber.pull.name" value="TEST-RIVER-ASYNC-SUBSCRIBER-1" />
                         <param name="directory.output" value="/tmp/river/test/pull" />
                         <param name="processor.sleep" value="-1" />
                     </params>

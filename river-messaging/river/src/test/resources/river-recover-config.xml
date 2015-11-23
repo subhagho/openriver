@@ -103,28 +103,28 @@
         </producer>
          <consumer name="TEST-CONSUMER-0">
             <params>
-                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-0"/>
+                <param name="subscriber.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-0"/>
                 <param name="directory.output" value="/tmp/river/test/pull"/>
                 <param name="processor.sleep" value="-1"/>
             </params>
         </consumer>
         <consumer name="TEST-CONSUMER-1">
             <params>
-                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
+                <param name="subscriber.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
                 <param name="directory.output" value="/tmp/river/test/pull"/>
                 <param name="processor.sleep" value="-1"/>
             </params>
         </consumer>
         <consumer name="TEST-CONSUMER-2">
             <params>
-                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
+                <param name="subscriber.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
                 <param name="directory.output" value="/tmp/river/test/pull"/>
                 <param name="processor.sleep" value="-1"/>
             </params>
         </consumer>
         <consumer name="TEST-CONSUMER-3">
             <params>
-                <param name="queue.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
+                <param name="subscriber.pull.name" value="TEST-RECOVER-RIVER-PULL-SUBSCRIBER-1"/>
                 <param name="directory.output" value="/tmp/river/test/pull"/>
                 <param name="processor.sleep" value="-1"/>
             </params>

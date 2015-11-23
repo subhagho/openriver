@@ -27,7 +27,6 @@ import java.util.List;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 20/08/14
  */
-@CPath(path = "consumer")
 public class ConsumerP extends Processor<String> {
 	private static final Logger log = LoggerFactory.getLogger(ConsumerP.class);
 

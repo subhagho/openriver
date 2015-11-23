@@ -101,7 +101,7 @@ public class Test_MessagePullSubscriber extends TestCase {
     private void configConsumer(ConfigPath path) throws Exception {
         Consumer c = new Consumer();
         c.configure(path);
-        c.queue(queue.subscriber(c.qname()));
+        c.subscriber(queue.subscriber(c.getSubscriberName()));
         consumers.add(c);
     }
 

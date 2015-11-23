@@ -104,7 +104,7 @@ public class ConfigUtils {
 	 * @throws ConfigurationException
 	 * @throws DataNotFoundException
 	 */
-	public static ConfigParams params(ConfigNode node)
+	public static ConfigParams params(ConfigNode node, boolean ingore)
 			throws ConfigurationException, DataNotFoundException {
 		if (node instanceof ConfigPath) {
 			if (((ConfigPath) node).nodes() != null) {
@@ -119,9 +119,16 @@ public class ConfigUtils {
 				}
 			}
 		}
-		throw new DataNotFoundException(
-				"No parameters found for specified node. [node="
-						+ node.getAbsolutePath() + "]");
+		if (!ingore)
+			throw new DataNotFoundException(
+					"No parameters found for specified node. [node="
+							+ node.getAbsolutePath() + "]");
+		return null;
+	}
+
+	public static ConfigParams params(ConfigNode node)
+			throws ConfigurationException, DataNotFoundException {
+		return params(node, false);
 	}
 
 	/**
@@ -134,7 +141,7 @@ public class ConfigUtils {
 	 * @throws ConfigurationException
 	 * @throws DataNotFoundException
 	 */
-	public static ConfigAttributes attributes(ConfigNode node)
+	public static ConfigAttributes attributes(ConfigNode node, boolean ignore)
 			throws ConfigurationException, DataNotFoundException {
 		if (node instanceof ConfigPath) {
 			if (((ConfigPath) node).nodes() != null) {
@@ -149,9 +156,16 @@ public class ConfigUtils {
 				}
 			}
 		}
-		throw new DataNotFoundException(
-				"No attributes found for specified node. [node="
-						+ node.getAbsolutePath() + "]");
+		if (!ignore)
+			throw new DataNotFoundException(
+					"No attributes found for specified node. [node="
+							+ node.getAbsolutePath() + "]");
+		return null;
+	}
+
+	public static ConfigAttributes attributes(ConfigNode node)
+			throws ConfigurationException, DataNotFoundException {
+		return attributes(node, false);
 	}
 
 	public static void addChildNode(ConfigNode parent, ConfigNode child)
@@ -265,8 +279,8 @@ public class ConfigUtils {
 			Class<?> type = source.getClass();
 			Field[] fields = ReflectionUtils.getAllFields(type);
 			if (fields != null && fields.length > 0) {
-				ConfigParams params = null;
-				ConfigAttributes attrs = null;
+				ConfigParams params = params(node, true);
+				ConfigAttributes attrs = attributes(node, true);
 				for (Field f : fields) {
 					if (f.isAnnotationPresent(CParam.class)) {
 						CParam p = f.getAnnotation(CParam.class);
@@ -275,16 +289,14 @@ public class ConfigUtils {
 							String value = null;
 							if (!StringUtils.isEmpty(pn)) {
 								if (pn.startsWith("@")) {
-									if (attrs == null) {
-										attrs = attributes(node);
-									}
 									pn = pn.replace("@", "");
-									value = attrs.attribute(pn);
-								} else {
-									if (params == null) {
-										params = params(node);
+									if (attrs != null) {
+										value = attrs.attribute(pn);
 									}
-									value = params.param(pn);
+								} else {
+									if (params != null) {
+										value = params.param(pn);
+									}
 								}
 								if (!StringUtils.isEmpty(value)) {
 									Object ret = ReflectionUtils

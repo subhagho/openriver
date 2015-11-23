@@ -30,7 +30,6 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
@@ -42,8 +41,6 @@ public class Producer implements Configurable, Runnable {
 
 	public static final class Constants {
 		private static final int b_size = 1000;
-
-		private static final ReentrantLock _lock = new ReentrantLock();
 	}
 
 	@CParam(name = "@name")

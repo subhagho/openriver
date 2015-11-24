@@ -31,7 +31,7 @@
 			<recycleStrategy
 				class="com.wookler.server.common.utils.FileSizeRecycleStrategy">
 				<params>
-					<param name="size" value="10000" />
+					<param name="size" value="50 KB" />
 				</params>
 			</recycleStrategy>
 			<backup>

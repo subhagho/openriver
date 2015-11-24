@@ -37,7 +37,7 @@ public interface CounterLogger extends Configurable {
      * @param info     - Application information.
      * @param counters - List of counters to log.
      */
-    public void log(AppInfo info, List<AbstractCounter> counters);
+    public void log(Module info, List<AbstractCounter> counters);
 
     /**
      * Parse a counter value from the specified string.

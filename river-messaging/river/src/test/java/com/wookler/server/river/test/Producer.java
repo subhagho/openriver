@@ -161,12 +161,7 @@ public class Producer implements Configurable, Runnable {
 							break;
 						if (StringUtils.isEmpty(line))
 							continue;
-						/*
-						 * long ts = System.currentTimeMillis();
-						 * publisher.publish(line);
-						 * r_time += (System.currentTimeMillis() - ts);
-						 */
-
+						
 						messages.add(line);
 						if (messages.size() == Constants.b_size) {
 							long ts = System.currentTimeMillis();

@@ -18,7 +18,6 @@ package com.wookler.server.common;
 
 import com.wookler.server.common.config.*;
 import com.wookler.server.common.utils.LogUtils;
-import com.wookler.server.common.utils.NetUtils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,27 +52,10 @@ public class Monitor implements Configurable {
 
 	@CPath(path = "monitor")
 	public static final class MonitorConfig {
-		@CParam(name = "app.name")
-		private String	appname;
 		@CParam(name = "monitor.window.recycle")
 		private String	window		= Constants.DEFAULT_RECYCLE_WINDOW;
 		@CParam(name = "monitor.frequency.write")
 		private String	frequency	= Constants.DEFAULT_WRITE_FREQUENCY;
-
-		/**
-		 * @return the appname
-		 */
-		public String getAppname() {
-			return appname;
-		}
-
-		/**
-		 * @param appname
-		 *            the appname to set
-		 */
-		public void setAppname(String appname) {
-			this.appname = appname;
-		}
 
 		/**
 		 * @return the window
@@ -128,7 +109,7 @@ public class Monitor implements Configurable {
 	private static final long _LOCK_TIMEOUT_ = 1;
 
 	private ProcessState	state		= new ProcessState();
-	private AppInfo			info		= new AppInfo();
+	private Module			module;
 	private TimeWindow		window		= null;
 	private TimeWindow		frequency	= null;
 	private ThreadMXBean	threadMXBean;
@@ -176,25 +157,7 @@ public class Monitor implements Configurable {
 			MonitorConfig mc = new MonitorConfig();
 			ConfigUtils.parse(config, mc);
 
-			info.app(mc.appname).starttime(System.currentTimeMillis());
-			try {
-
-				InetAddress addr = NetUtils.getIpAddress();
-				if (addr == null) {
-					info.ip("127.0.0.1");
-					info.hostname("localhost");
-				} else {
-					info.ip(addr.getHostAddress());
-					info.hostname(addr.getHostName());
-				}
-			} catch (Exception ex) {
-				debug(getClass(), ex.getLocalizedMessage());
-				if (StringUtils.isEmpty(info.ip()))
-					info.ip("127.0.0.1");
-				if (StringUtils.isEmpty(info.hostname()))
-					info.hostname("localhost");
-			}
-			debug(getClass(), info.toString());
+			module = Env.get().getModule();
 
 			window = TimeWindow.parse(mc.window.trim());
 			debug(getClass(), window.toString());
@@ -467,15 +430,6 @@ public class Monitor implements Configurable {
 		return window;
 	}
 
-	/**
-	 * Get the application information handle.
-	 *
-	 * @return - App info.
-	 */
-	public AppInfo info() {
-		return info;
-	}
-
 	private boolean isThreadRunning(long id) {
 		if (threads.containsKey(id)) {
 			MonitoredThread t = threads.get(id);
@@ -520,7 +474,7 @@ public class Monitor implements Configurable {
 					counters.add(copy);
 				}
 
-				clog.log(info, counters);
+				clog.log(module, counters);
 			}
 		} catch (Throwable t) {
 			error(getClass(), t);
@@ -539,7 +493,7 @@ public class Monitor implements Configurable {
 					if (hb != null)
 						beats.add(hb);
 				}
-				hlog.log(info, beats);
+				hlog.log(module, beats);
 			}
 		} catch (Throwable t) {
 			error(getClass(), t);

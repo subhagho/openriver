@@ -62,6 +62,8 @@ public class FileBackupHelper implements Configurable {
 	}
 
 	@CParam(name = "backup.directory", required = false)
+	private String backupDirectoryName;
+
 	private File backupDirectory;
 
 	@CParam(name = "backup.count", required = false)
@@ -129,6 +131,21 @@ public class FileBackupHelper implements Configurable {
 	 */
 	public void setBackupCount(int backupCount) {
 		this.backupCount = backupCount;
+	}
+
+	/**
+	 * @return the backupDirectoryName
+	 */
+	public String getBackupDirectoryName() {
+		return backupDirectoryName;
+	}
+
+	/**
+	 * @param backupDirectoryName
+	 *            the backupDirectoryName to set
+	 */
+	public void setBackupDirectoryName(String backupDirectoryName) {
+		this.backupDirectoryName = backupDirectoryName;
 	}
 
 	/**
@@ -289,6 +306,9 @@ public class FileBackupHelper implements Configurable {
 	public void configure(ConfigNode config) throws ConfigurationException {
 		try {
 			ConfigUtils.parse(config, this);
+			backupDirectoryName = PropertySubstitute
+					.substitute(backupDirectoryName, null, true);
+			backupDirectory = new File(backupDirectoryName);
 			if (!backupDirectory.exists()) {
 				backupDirectory.mkdirs();
 			} else {

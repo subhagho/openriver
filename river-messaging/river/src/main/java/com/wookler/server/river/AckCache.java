@@ -1,19 +1,14 @@
 /*
- *
- *  Copyright 2014 Subhabrata Ghosh
- *  
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *  http://www.apache.org/licenses/LICENSE-2.0
- *  
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Copyright 2014 Subhabrata Ghosh
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.wookler.server.river;
 
@@ -22,9 +17,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.wookler.server.common.AbstractCounter;
+import com.wookler.server.common.Average;
 import com.wookler.server.common.Configurable;
+import com.wookler.server.common.Count;
 import com.wookler.server.common.LockTimeoutException;
 import com.wookler.server.common.config.CPath;
+import com.wookler.server.common.utils.Monitoring;
 import com.wookler.server.river.AckCacheStructs.MessageAckRecord;
 import com.wookler.server.river.AckCacheStructs.StructSubscriberConfig;
 
@@ -35,17 +34,27 @@ import com.wookler.server.river.AckCacheStructs.StructSubscriberConfig;
  * @created Jun 10, 2015:2:02:44 PM
  *
  */
-@CPath(path="ackCache")
+@CPath(path = "ackCache")
 public abstract class AckCache<M> implements Configurable {
 	public static final class Constants {
-		protected static final long LOCK_TIMEOUT = 1000;
-		private static final int DEFAULT_ACK_THROTTLE_SIZE = 100000;
+		protected static final long	LOCK_TIMEOUT				= 1000;
+		private static final int	DEFAULT_ACK_THROTTLE_SIZE	= 100000;
+
+		public static final String	MONITOR_NAMESPACE		= "river.counters.ackCache";
+		public static final String	MONITOR_COUNTER_ACKS	= "acks";
+		public static final String	MONITOR_COUNTER_RESEND	= "resend";
+		public static final String	MONITOR_COUNTER_ADDS	= "adds";
+		public static final String	MONITOR_COUNTER_REMOVES	= "remove";
+
+		public static final int RetryCount = 3;
 	}
 
-	protected MessageQueue<M> queue;
-	protected Map<String, StructSubscriberConfig> subscribers = new HashMap<>();
-	protected ReentrantLock ackLock = new ReentrantLock();
-	protected ReentrantLock resendLock = new ReentrantLock();
+	private HashMap<String, String[]> counters = new HashMap<String, String[]>();
+
+	protected MessageQueue<M>						queue;
+	protected Map<String, StructSubscriberConfig>	subscribers	= new HashMap<>();
+	protected ReentrantLock							ackLock		= new ReentrantLock();
+	protected ReentrantLock							resendLock	= new ReentrantLock();
 
 	public AckCache<M> setQueue(MessageQueue<M> queue) {
 		this.queue = queue;
@@ -56,7 +65,7 @@ public abstract class AckCache<M> implements Configurable {
 	public AckCache<M> addSubscriber(Subscriber<M> subscriber) {
 		if (!subscribers.containsKey(subscriber.name)) {
 			StructSubscriberConfig c = new StructSubscriberConfig();
-			c.maxSize = subscriber.cachesize;
+			c.maxSize = subscriber.cachesize * subscriber.batchSize;
 			if (c.maxSize <= 0)
 				c.maxSize = Constants.DEFAULT_ACK_THROTTLE_SIZE;
 			c.subscriber = subscriber.name;
@@ -65,6 +74,49 @@ public abstract class AckCache<M> implements Configurable {
 			subscribers.put(subscriber.name(), c);
 		}
 		return this;
+	}
+
+	protected void incrementCounter(String name, long value) {
+		if (counters.containsKey(name)) {
+			String[] names = counters.get(name);
+			Monitoring.increment(names[0], names[1], value);
+		}
+	}
+
+	protected void registerCounters() {
+
+		AbstractCounter c = Monitoring.create(
+				Constants.MONITOR_NAMESPACE + "." + queue.getName(),
+				Constants.MONITOR_COUNTER_ACKS, Count.class,
+				AbstractCounter.Mode.PROD);
+		if (c != null) {
+			counters.put(Constants.MONITOR_COUNTER_ACKS,
+					new String[] { c.namespace(), c.name() });
+		}
+		c = Monitoring.create(
+				Constants.MONITOR_NAMESPACE + "." + queue.getName(),
+				Constants.MONITOR_COUNTER_RESEND, Count.class,
+				AbstractCounter.Mode.PROD);
+		if (c != null) {
+			counters.put(Constants.MONITOR_COUNTER_RESEND,
+					new String[] { c.namespace(), c.name() });
+		}
+		c = Monitoring.create(
+				Constants.MONITOR_NAMESPACE + "." + queue.getName(),
+				Constants.MONITOR_COUNTER_ADDS, Count.class,
+				AbstractCounter.Mode.PROD);
+		if (c != null) {
+			counters.put(Constants.MONITOR_COUNTER_ADDS,
+					new String[] { c.namespace(), c.name() });
+		}
+		c = Monitoring.create(
+				Constants.MONITOR_NAMESPACE + "." + queue.getName(),
+				Constants.MONITOR_COUNTER_REMOVES, Average.class,
+				AbstractCounter.Mode.PROD);
+		if (c != null) {
+			counters.put(Constants.MONITOR_COUNTER_REMOVES,
+					new String[] { c.namespace(), c.name() });
+		}
 	}
 
 	/**
@@ -101,12 +153,13 @@ public abstract class AckCache<M> implements Configurable {
 	 * @param rec
 	 *            - Pre-allocated ACK record handle.
 	 * @param resendCount
-	 *            - resend count ( 0 or 1 depending upon whether the message is a new message or a resend message)
+	 *            - resend count ( 0 or 1 depending upon whether the message is
+	 *            a new message or a resend message)
 	 * @throws MessageQueueException
 	 */
 	public abstract void add(String subscriber, Message<M> message,
-			MessageAckRecord ack, int resendCount) throws MessageQueueException,
-			LockTimeoutException;
+			MessageAckRecord ack, int resendCount)
+					throws MessageQueueException, LockTimeoutException;
 
 	/**
 	 * Add the specified set of messages to the ACK pending cache.
@@ -122,8 +175,8 @@ public abstract class AckCache<M> implements Configurable {
 	 * @throws MessageQueueException
 	 */
 	public abstract void add(String subscriber, List<Message<M>> messages,
-			List<MessageAckRecord> recs, int resendCount) throws MessageQueueException,
-			LockTimeoutException;
+			List<MessageAckRecord> recs, int resendCount)
+					throws MessageQueueException, LockTimeoutException;
 
 	/**
 	 * Get the set of ACK pending messages that qualify for resend.

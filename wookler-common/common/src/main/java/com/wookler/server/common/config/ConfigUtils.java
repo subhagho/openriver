@@ -393,6 +393,7 @@ public class ConfigUtils {
 	 */
 	public static final ConfigNode getConfigNode(ConfigNode node, Class<?> type,
 			String path) throws ConfigurationException {
+		ConfigNode onode = node;
 		if (StringUtils.isEmpty(path)
 				&& type.isAnnotationPresent(CPath.class)) {
 			CPath cp = type.getAnnotation(CPath.class);
@@ -407,6 +408,8 @@ public class ConfigUtils {
 			if (!checkname(node, path))
 				node = pp.search(path);
 		}
+		if (node == null)
+			node = onode;
 		return node;
 	}
 

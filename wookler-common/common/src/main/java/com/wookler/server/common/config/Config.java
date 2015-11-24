@@ -50,10 +50,6 @@ public class Config {
 		public static final String NODE_ATTR_ROOTNODE = "root";
 	}
 
-	public static final class ConfigConstants {
-		public static final String CONFIG_ATTR_TYPE = "class";
-	}
-
 	private String filePath;
 	private String configPath;
 	private ConfigNode node;

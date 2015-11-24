@@ -27,12 +27,31 @@ import com.wookler.server.common.config.ConfigNode;
 @CPath(path = "recycleStrategy")
 public class FileSizeRecycleStrategy extends FileRecycleStrategy {
 	@CParam(name = "size")
-	private long maxSize;
+	private String sizeValue;
+
+	private DataSize maxSize;
+
+	/**
+	 * @return the sizeValue
+	 */
+	public String getSizeValue() {
+		return sizeValue;
+	}
+
+	/**
+	 * @param sizeValue
+	 *            the sizeValue to set
+	 */
+	public void setSizeValue(String sizeValue) {
+		this.sizeValue = sizeValue;
+
+		maxSize = DataSize.parse(sizeValue);
+	}
 
 	/**
 	 * @return the maxSize
 	 */
-	public long getMaxSize() {
+	public DataSize getMaxSize() {
 		return maxSize;
 	}
 
@@ -40,7 +59,7 @@ public class FileSizeRecycleStrategy extends FileRecycleStrategy {
 	 * @param maxSize
 	 *            the maxSize to set
 	 */
-	public void setMaxSize(long maxSize) {
+	public void setMaxSize(DataSize maxSize) {
 		this.maxSize = maxSize;
 	}
 
@@ -72,11 +91,13 @@ public class FileSizeRecycleStrategy extends FileRecycleStrategy {
 	@Override
 	public boolean needsRecycle(File file) {
 		try {
-			Path p = Paths.get(file.getAbsolutePath());
-			BasicFileAttributes attrs = Files.readAttributes(p,
-					BasicFileAttributes.class);
-			if (attrs.size() > maxSize)
-				return true;
+			if (file.exists()) {
+				Path p = Paths.get(file.getAbsolutePath());
+				BasicFileAttributes attrs = Files.readAttributes(p,
+						BasicFileAttributes.class);
+				if (attrs.size() > maxSize.getValue())
+					return true;
+			}
 		} catch (Exception e) {
 			LogUtils.warn(getClass(), e.getLocalizedMessage());
 			LogUtils.stacktrace(getClass(), e);

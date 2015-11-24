@@ -13,7 +13,9 @@
 
 package com.wookler.server.common;
 
+import java.net.InetAddress;
 import java.nio.charset.Charset;
+import java.util.UUID;
 
 import com.wookler.server.common.Monitor.MonitorConfig;
 import com.wookler.server.common.config.CPath;
@@ -22,6 +24,7 @@ import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigParams;
 import com.wookler.server.common.config.ConfigUtils;
 import com.wookler.server.common.utils.LogUtils;
+import com.wookler.server.common.utils.NetUtils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -47,6 +50,7 @@ public class Env {
 
 	private TaskManager			taskmanager	= new TaskManager();
 	private Config				config;
+	private Module				module;
 	private SystemStartupLock	startupLock	= new SystemStartupLock();
 	protected ObjectState		state		= new ObjectState();
 	protected ConfigNode		envConfig;
@@ -63,6 +67,20 @@ public class Env {
 
 	public Charset charset() {
 		return encoding;
+	}
+
+	/**
+	 * @return the module
+	 */
+	public Module getModule() {
+		return module;
+	}
+
+	/**
+	 * @return the envConfig
+	 */
+	public ConfigNode getEnvConfig() {
+		return envConfig;
 	}
 
 	/**
@@ -90,6 +108,8 @@ public class Env {
 				} catch (DataNotFoundException e) {
 					// Do nothing...
 				}
+				setupModule(envConfig);
+				
 				// Setup and create the Monitor.
 				configMonitor();
 				// Setup and create the task manager.
@@ -104,6 +124,24 @@ public class Env {
 			state.setError(e);
 			throw e;
 		}
+	}
+
+	private void setupModule(ConfigNode config) throws Exception {
+		module = new Module();
+		ConfigUtils.parse(config, module);
+
+		module.setInstanceId(UUID.randomUUID().toString());
+		InetAddress ip = NetUtils.getIpAddress();
+
+		if (ip != null) {
+			module.setHostip(ip.getHostAddress());
+			module.setHostname(ip.getCanonicalHostName());
+		} else {
+			module.setHostip("127.0.0.1");
+			module.setHostname("localhost");
+		}
+
+		module.setStartTime(System.currentTimeMillis());
 	}
 
 	private void configMonitor() throws Exception {

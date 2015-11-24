@@ -19,9 +19,9 @@
 package com.wookler.server.common.counter;
 
 import com.wookler.server.common.AbstractCounter;
-import com.wookler.server.common.AppInfo;
 import com.wookler.server.common.ConfigurationException;
 import com.wookler.server.common.CounterLogger;
+import com.wookler.server.common.Module;
 import com.wookler.server.common.config.ConfigNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ public class LogCounterLogger implements CounterLogger {
     private static final Logger log = LoggerFactory.getLogger(LogCounterLogger.class);
 
     @Override
-    public void log(AppInfo info, List<AbstractCounter> counters) {
+    public void log(Module info, List<AbstractCounter> counters) {
         if (counters != null && !counters.isEmpty()) {
             Collections.sort(counters);
             for (AbstractCounter c : counters) {

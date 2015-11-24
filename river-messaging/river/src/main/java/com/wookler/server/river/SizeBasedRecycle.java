@@ -21,6 +21,7 @@ import com.wookler.server.common.config.CParam;
 import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigPath;
 import com.wookler.server.common.config.ConfigUtils;
+import com.wookler.server.common.utils.DataSize;
 import com.wookler.server.common.utils.LogUtils;
 
 /**
@@ -30,16 +31,14 @@ import com.wookler.server.common.utils.LogUtils;
  * @created 15/08/14
  */
 public class SizeBasedRecycle implements RecycleStrategy {
-	public static final class Constants {
-		public static final String CONFIG_RECYCLE_SIZE = "recycle.size";
-	}
 
 	@CParam(name = "recycle.size")
-	private long size;
+	private String		sizeValue;
+	private DataSize	size;
 
 	@Override
 	public boolean recycle(MessageBlock block) {
-		if (size <= block.size()) {
+		if (size.getValue() <= block.size()) {
 			LogUtils.debug(getClass(), "Block recycle needed.[size="
 					+ block.size() + "][id=" + block.id() + "]");
 			return true;
@@ -55,6 +54,8 @@ public class SizeBasedRecycle implements RecycleStrategy {
 					ConfigPath.class.getCanonicalName(),
 					config.getClass().getCanonicalName()));
 		ConfigUtils.parse(config, this);
+		size = DataSize.parse(sizeValue);
+
 		LogUtils.debug(getClass(), ((ConfigPath) config).path());
 		LogUtils.debug(getClass(),
 				"Using message block recycle size = " + size + ".");
@@ -68,7 +69,7 @@ public class SizeBasedRecycle implements RecycleStrategy {
 	/**
 	 * @return the size
 	 */
-	public long getSize() {
+	public DataSize getSize() {
 		return size;
 	}
 
@@ -76,7 +77,23 @@ public class SizeBasedRecycle implements RecycleStrategy {
 	 * @param size
 	 *            the size to set
 	 */
-	public void setSize(long size) {
+	public void setSize(DataSize size) {
 		this.size = size;
+	}
+
+	/**
+	 * @return the sizeValue
+	 */
+	public String getSizeValue() {
+		return sizeValue;
+	}
+
+	/**
+	 * @param sizeValue
+	 *            the sizeValue to set
+	 */
+	public void setSizeValue(String sizeValue) {
+		this.sizeValue = sizeValue;
+
 	}
 }

@@ -37,7 +37,7 @@ public interface HeartbeatLogger extends Configurable {
      * @param info       - Application information.
      * @param heartbeats - List of heartbeats.
      */
-    public void log(AppInfo info, List<Heartbeat> heartbeats);
+    public void log(Module info, List<Heartbeat> heartbeats);
 
     /**
      * Parse a heartbeat record from the input string value.

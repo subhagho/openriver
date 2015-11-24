@@ -20,7 +20,7 @@
     <property name="LOGDIR" value="/tmp/river/test/log" />
     <property name="APP" value="river-test" />
 
-    <contextName>maracache</contextName>
+    <contextName>wookler-test</contextName>
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOGDIR}/${APP}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">

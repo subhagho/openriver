@@ -1,19 +1,14 @@
 /*
- *
- *  Copyright 2014 Subhabrata Ghosh
- *  
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *  http://www.apache.org/licenses/LICENSE-2.0
- *  
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Copyright 2014 Subhabrata Ghosh
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.wookler.server.river;
 
@@ -47,27 +42,25 @@ import com.wookler.server.river.AckCacheStructs.StructSubscriberConfig;
  */
 public class BlockingAckCache<M> extends AckCache<M> {
 
-	private HashMap<String, Cache<String, MessageAckRecord>> ackCaches = new HashMap<>();
-	private HashMap<String, LinkedList<MessageAckRecord>> resendCaches = new HashMap<>();
-	private HashMap<String, StructMessageBlockAcks> blockMap = new HashMap<>();
-	private HashMap<String, ReusableObjectFactory<MessageAckRecord>> freeObjects = new HashMap<>();
+	private HashMap<String, Cache<String, MessageAckRecord>>			ackCaches		= new HashMap<>();
+	private HashMap<String, LinkedList<MessageAckRecord>>				resendCaches	= new HashMap<>();
+	private HashMap<String, StructMessageBlockAcks>						blockMap		= new HashMap<>();
+	private HashMap<String, ReusableObjectFactory<MessageAckRecord>>	freeObjects		= new HashMap<>();
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
-	 * com.wookler.server.common.Configurable#configure(com.wookler.server.common
+	 * com.wookler.server.common.Configurable#configure(com.wookler.server.
+	 * common
 	 * .config.ConfigNode)
 	 */
 	@Override
 	public void configure(ConfigNode config) throws ConfigurationException {
-		// TODO Auto-generated method stub
-
+		registerCounters();
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.common.Configurable#dispose()
 	 */
 	@Override
@@ -87,12 +80,14 @@ public class BlockingAckCache<M> extends AckCache<M> {
 			throws MessageQueueException {
 		if (!ackCaches.containsKey(subscriber))
 			throw new MessageQueueException(
-					"No registered subscriber with ID. [id=" + subscriber + "]");
+					"No registered subscriber with ID. [id=" + subscriber
+							+ "]");
 		Cache<String, MessageAckRecord> cache = ackCaches.get(subscriber);
 		MessageAckRecord rec = cache.getIfPresent(messageid);
 		if (rec != null) {
-		    rec.setAcked(AckCacheStructs.AckState.ACKED);
+			rec.setAcked(AckCacheStructs.AckState.ACKED);
 			cache.invalidate(messageid);
+
 			StructMessageBlockAcks ba = blockMap.get(rec.getBlockId());
 			if (ba == null) {
 				ba = new StructMessageBlockAcks();
@@ -101,6 +96,8 @@ public class BlockingAckCache<M> extends AckCache<M> {
 			}
 			ba.count--;
 			ba.timestamp = System.currentTimeMillis();
+
+			incrementCounter(Constants.MONITOR_COUNTER_REMOVES, 1);
 			return rec;
 		}
 		return null;
@@ -108,7 +105,6 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.river.AckCache#ack(java.lang.String,
 	 * java.lang.String)
 	 */
@@ -119,6 +115,7 @@ public class BlockingAckCache<M> extends AckCache<M> {
 			if (ackLock.tryLock(AckCache.Constants.LOCK_TIMEOUT,
 					TimeUnit.MILLISECONDS)) {
 				try {
+					incrementCounter(Constants.MONITOR_COUNTER_ACKS, 1);
 					MessageAckRecord rec = ackLocked(subscriber, messageid);
 					if (rec != null) {
 						ReusableObjectFactory<MessageAckRecord> fo = freeObjects
@@ -146,7 +143,6 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.river.AckCache#ack(java.lang.String,
 	 * java.util.List)
 	 */
@@ -160,11 +156,13 @@ public class BlockingAckCache<M> extends AckCache<M> {
 			if (ackLock.tryLock(AckCache.Constants.LOCK_TIMEOUT,
 					TimeUnit.MILLISECONDS)) {
 				try {
+					incrementCounter(Constants.MONITOR_COUNTER_ACKS,
+							messageids.size());
 					List<MessageAckRecord> recs = new LinkedList<>();
 					for (String mid : messageids) {
 						MessageAckRecord rec = ackLocked(subscriber, mid);
 						if (rec != null) {
-						    rec.clear();
+							rec.clear();
 							recs.add(rec);
 						}
 					}
@@ -176,6 +174,7 @@ public class BlockingAckCache<M> extends AckCache<M> {
 						StructSubscriberConfig c = subscribers.get(subscriber);
 						c.usedSize -= recs.size();
 					}
+
 				} finally {
 					ackLock.unlock();
 				}
@@ -190,35 +189,37 @@ public class BlockingAckCache<M> extends AckCache<M> {
 		}
 	}
 
-	private void addLocked(String subscriber, MessageAckRecord rec, boolean updateBlockMap)
-			throws MessageQueueException {
+	private void addLocked(String subscriber, MessageAckRecord rec,
+			boolean updateBlockMap) throws MessageQueueException {
 		Cache<String, MessageAckRecord> cache = ackCaches.get(subscriber);
 		if (cache == null)
 			throw new MessageQueueException(
-					"No subscriber registered with ID. [id=" + subscriber + "]");
+					"No subscriber registered with ID. [id=" + subscriber
+							+ "]");
 		cache.put(rec.getMessageId(), rec);
 		// update the blockMap only if the flag is true (only for new messages)
 		if (updateBlockMap) {
-		    StructMessageBlockAcks ba = blockMap.get(rec.getBlockId());
-		    if (ba == null) {
-		        ba = new StructMessageBlockAcks();
-		        ba.blockId = rec.getBlockId();
-		        blockMap.put(ba.blockId, ba);
-		    }
-		    ba.count++;
-		    ba.timestamp = System.currentTimeMillis();
+			StructMessageBlockAcks ba = blockMap.get(rec.getBlockId());
+			if (ba == null) {
+				ba = new StructMessageBlockAcks();
+				ba.blockId = rec.getBlockId();
+				blockMap.put(ba.blockId, ba);
+			}
+			ba.count++;
+			ba.timestamp = System.currentTimeMillis();
 		}
+		incrementCounter(Constants.MONITOR_COUNTER_ADDS, 1);
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.river.AckCache#add(java.lang.String,
 	 * com.wookler.server.river.Message)
 	 */
 	@Override
-	public void add(String subscriber, Message<M> message, MessageAckRecord rec, int resendCount)
-			throws MessageQueueException, LockTimeoutException {
+	public void add(String subscriber, Message<M> message, MessageAckRecord rec,
+			int resendCount)
+					throws MessageQueueException, LockTimeoutException {
 		Preconditions.checkArgument(!StringUtils.isEmpty(subscriber));
 		Preconditions.checkArgument(message != null);
 		Preconditions.checkArgument(rec != null);
@@ -226,7 +227,7 @@ public class BlockingAckCache<M> extends AckCache<M> {
 			if (ackLock.tryLock(AckCache.Constants.LOCK_TIMEOUT,
 					TimeUnit.MILLISECONDS)) {
 				try {
-				    rec.setAcked(AckCacheStructs.AckState.USED);
+					rec.setAcked(AckCacheStructs.AckState.USED);
 					rec.setBlockId(message.header().blockid());
 					rec.setBlockIndex(message.header().blockindex());
 					rec.setMessageId(message.header().id());
@@ -234,7 +235,7 @@ public class BlockingAckCache<M> extends AckCache<M> {
 					rec.setSubscriber(subscriber);
 					boolean updateBlockMap = true;
 					if (resendCount == 1) {
-					    updateBlockMap = false;
+						updateBlockMap = false;
 					}
 					addLocked(subscriber, rec, updateBlockMap);
 				} finally {
@@ -253,14 +254,13 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.river.AckCache#add(java.lang.String,
 	 * java.util.List)
 	 */
 	@Override
 	public void add(String subscriber, List<Message<M>> messages,
-			List<MessageAckRecord> recs, int resendCount) throws MessageQueueException,
-			LockTimeoutException {
+			List<MessageAckRecord> recs, int resendCount)
+					throws MessageQueueException, LockTimeoutException {
 		Preconditions.checkArgument(!StringUtils.isEmpty(subscriber));
 		Preconditions.checkArgument(messages != null && !messages.isEmpty());
 		Preconditions.checkArgument(recs != null);
@@ -272,12 +272,16 @@ public class BlockingAckCache<M> extends AckCache<M> {
 				try {
 					int ii = -1;
 					int r = resendCount;
-					// In the messages list, the first r messages correspond to the resend messages, remaining (size - r) messages correspond to new messages
+					// In the messages list, the first r messages correspond to
+					// the resend messages, remaining (size - r) messages
+					// correspond to new messages
 					for (ii = 0; ii < messages.size(); ii++) {
 						Message<M> message = messages.get(ii);
 						MessageAckRecord rec = recs.get(ii);
-						if ( rec.getAcked() != AckCacheStructs.AckState.FREE) {
-						    throw new MessageQueueException("Ack state is not free. Record: " + rec.toString());
+						if (rec.getAcked() != AckCacheStructs.AckState.FREE) {
+							throw new MessageQueueException(
+									"Ack state is not free. Record: "
+											+ rec.toString());
 						}
 						rec.setAcked(AckCacheStructs.AckState.USED);
 						rec.setBlockId(message.header().blockid());
@@ -285,14 +289,17 @@ public class BlockingAckCache<M> extends AckCache<M> {
 						rec.setMessageId(message.header().id());
 						rec.setSendTimestamp(message.header().sendtime());
 						rec.setSubscriber(subscriber);
-						// blockMap should be updated with the count only for new messages that are received. If the messages are being
+						// blockMap should be updated with the count only for
+						// new messages that are received. If the messages are
+						// being
 						// resent, the the blockMap already holds the count.
 						boolean updateBlockMap = true;
-						if (r > 0) { 
-						    updateBlockMap = false;
+						if (r > 0) {
+							updateBlockMap = false;
 						}
 						addLocked(subscriber, rec, updateBlockMap);
-						// decrement the resend count after each message is added
+						// decrement the resend count after each message is
+						// added
 						r--;
 					}
 					if (ii < recs.size()) {
@@ -320,7 +327,6 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * com.wookler.server.river.AckCache#hasMessagesForResend(java.lang.String)
 	 */
@@ -338,7 +344,6 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * com.wookler.server.river.AckCache#getMessagesForResend(java.lang.String)
 	 */
@@ -361,7 +366,7 @@ public class BlockingAckCache<M> extends AckCache<M> {
 							if (s > 0) {
 								records = new LinkedList<>();
 								for (int ii = 0; ii < s; ii++) {
-								    MessageAckRecord r = cache.pop();
+									MessageAckRecord r = cache.pop();
 									records.add(r);
 								}
 							}
@@ -382,13 +387,16 @@ public class BlockingAckCache<M> extends AckCache<M> {
 								for (String b : rMap.keySet()) {
 									LinkedList<MessageAckRecord> l = rMap
 											.get(b);
-									List<Message<M>> ms = queue.readForResend(l
-											.get(0).getBlockId(), l);
+									List<Message<M>> ms = queue.readForResend(
+											l.get(0).getBlockId(), l);
 									if (!ms.isEmpty()) {
 										messages.addAll(ms);
 									}
 								}
 								if (!messages.isEmpty()) {
+									incrementCounter(
+											Constants.MONITOR_COUNTER_RESEND,
+											messages.size());
 									return messages;
 								}
 							}
@@ -408,7 +416,6 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.river.AckCache#hasPendingAcks(java.lang.String)
 	 */
 	@Override
@@ -424,7 +431,6 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * com.wookler.server.river.AckCache#addSubscriber(com.wookler.server.river
 	 * .Subscriber)
@@ -437,38 +443,40 @@ public class BlockingAckCache<M> extends AckCache<M> {
 		RemovalListener<String, MessageAckRecord> evictionListener = new RemovalListener<String, MessageAckRecord>() {
 			public void onRemoval(
 					RemovalNotification<String, MessageAckRecord> kv) {
-                /**
-                 * IMPORTANT : The record that is being evicted from the
-                 * ackCache indicates that the timeout happened before the ack
-                 * was received. So in order for the messages to be resent at a
-                 * later point of time, we need to add the MessageAckRecord to
-                 * the resendCache. A deep copy of the MessageAckRecord is made,
-                 * since the MessageAckRecord that is obtained from the ackCache
-                 * is part of ReusableObjectFactory. So once the record is
-                 * evicted from the ackCache, it is returned back to the pool to
-                 * be used later. So a deep copy is made not to lose the info
-                 * pertaining to unacked messages. While the message is being
-                 * evicted from the ackCache, the blockMap is not decremented
-                 * for count. This is done because the blockMap count is used to
-                 * decide if a block is a candidate for gc. The block which has
-                 * pending unacked messages should never be GCed. At the time of
-                 * add(), the block count is not incremented for messages that
-                 * are being resent (if we do not take care of this, it will
-                 * result in double counting, and the blocks will never be GCed.
-                 * On the other hand, if we decrement the count here, then we
-                 * would GC a block prematurely).
-                 **/
-				if (kv.wasEvicted() && kv.getValue().getAcked() == AckCacheStructs.AckState.USED) {
-					LinkedList<MessageAckRecord> records = resendCaches.get(kv
-							.getValue().getSubscriber());
+				/**
+				 * IMPORTANT : The record that is being evicted from the
+				 * ackCache indicates that the timeout happened before the ack
+				 * was received. So in order for the messages to be resent at a
+				 * later point of time, we need to add the MessageAckRecord to
+				 * the resendCache. A deep copy of the MessageAckRecord is made,
+				 * since the MessageAckRecord that is obtained from the ackCache
+				 * is part of ReusableObjectFactory. So once the record is
+				 * evicted from the ackCache, it is returned back to the pool to
+				 * be used later. So a deep copy is made not to lose the info
+				 * pertaining to unacked messages. While the message is being
+				 * evicted from the ackCache, the blockMap is not decremented
+				 * for count. This is done because the blockMap count is used to
+				 * decide if a block is a candidate for gc. The block which has
+				 * pending unacked messages should never be GCed. At the time of
+				 * add(), the block count is not incremented for messages that
+				 * are being resent (if we do not take care of this, it will
+				 * result in double counting, and the blocks will never be GCed.
+				 * On the other hand, if we decrement the count here, then we
+				 * would GC a block prematurely).
+				 **/
+				if (kv.wasEvicted() && kv.getValue()
+						.getAcked() == AckCacheStructs.AckState.USED) {
+					LinkedList<MessageAckRecord> records = resendCaches
+							.get(kv.getValue().getSubscriber());
 					if (records != null) {
 						try {
 							if (resendLock.tryLock(
 									AckCache.Constants.LOCK_TIMEOUT,
 									TimeUnit.MILLISECONDS)) {
 								try {
-								    // deep copy
-									records.add(new MessageAckRecord(kv.getValue()));
+									// deep copy
+									records.add(new MessageAckRecord(
+											kv.getValue()));
 								} finally {
 									resendLock.unlock();
 								}
@@ -483,13 +491,13 @@ public class BlockingAckCache<M> extends AckCache<M> {
 						}
 					}
 					// return the MessageAckRecord back to the pool for reuse
-					ReusableObjectFactory<MessageAckRecord> fo = freeObjects.get(kv
-	                        .getValue().getSubscriber());
-	                if (fo != null) {
-	                    MessageAckRecord rec = kv.getValue();
-	                    rec.clear();
-	                    fo.free(rec);
-	                }
+					ReusableObjectFactory<MessageAckRecord> fo = freeObjects
+							.get(kv.getValue().getSubscriber());
+					if (fo != null) {
+						MessageAckRecord rec = kv.getValue();
+						rec.clear();
+						fo.free(rec);
+					}
 				}
 			}
 		};
@@ -512,12 +520,12 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see com.wookler.server.river.AckCache#canAddMessages(java.lang.String,
 	 * long)
 	 */
 	@Override
-	public List<MessageAckRecord> allocateAckCache(String subscriber, int count) {
+	public List<MessageAckRecord> allocateAckCache(String subscriber,
+			int count) {
 		if (ackCaches.containsKey(subscriber)) {
 			StructSubscriberConfig c = subscribers.get(subscriber);
 			int rem = c.maxSize - c.usedSize;
@@ -533,7 +541,6 @@ public class BlockingAckCache<M> extends AckCache<M> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * com.wookler.server.river.AckCache#canAllocateAckCache(java.lang.String,
 	 * int)

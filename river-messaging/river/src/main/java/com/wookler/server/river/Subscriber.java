@@ -42,14 +42,11 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 	private static final Logger log = LoggerFactory.getLogger(Subscriber.class);
 
 	public static final class Constants {
-		public static final String	MONITOR_NAMESPACE				= "river.counters.subscriber";
-		public static final String	MONITOR_COUNTER_ACKS			= "acks";
-		public static final String	MONITOR_COUNTER_ACKS_CACHE_ADD	= "acks.add";
-		public static final String	MONITOR_COUNTER_ACKS_CACHE_REM	= "acks.remove";
-		public static final String	MONITOR_COUNTER_ACKS_CACHE_READ	= "acks.read";
-		public static final String	MONITOR_COUNTER_RESEND			= "resend";
-		public static final String	MONITOR_COUNTER_READS			= "reads";
-		public static final String	MONITOR_COUNTER_READTIME		= "time.read";
+		public static final String	MONITOR_NAMESPACE			= "river.counters.subscriber";
+		public static final String	MONITOR_COUNTER_ACKS		= "acks";
+		public static final String	MONITOR_COUNTER_RESEND		= "resend";
+		public static final String	MONITOR_COUNTER_READS		= "reads";
+		public static final String	MONITOR_COUNTER_READTIME	= "time.read";
 
 		public static final int RetryCount = 3;
 	}
@@ -396,54 +393,53 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 			ObjectState.check(state, EObjectState.Available, Subscriber.class);
 			if (lock.tryLock(timeout, TimeUnit.MILLISECONDS)) {
 				try {
-					int csize = ackCache.canAllocateAckCache(name, size);
-					if (csize > 0) {
-						List<Message<M>> read = new LinkedList<>();
-						int resendCount = 0;
+					List<Message<M>> read = new LinkedList<>();
+					if (ackrequired) {
+						int csize = ackCache.canAllocateAckCache(name, size);
+						if (csize > 0) {
+							int resendCount = 0;
 
-						List<MessageAckRecord> recs = ackCache
-								.allocateAckCache(name, csize);
-						if (recs != null && !recs.isEmpty()) {
-							csize = recs.size();
+							List<MessageAckRecord> recs = ackCache
+									.allocateAckCache(name, csize);
+							if (recs != null && !recs.isEmpty()) {
+								csize = recs.size();
+								List<Message<M>> messages = ackCache
+										.getMessagesForResend(name, csize);
+								if (messages != null && !messages.isEmpty()) {
+									read.addAll(messages);
+									incrementCounter(
+											Constants.MONITOR_COUNTER_RESEND,
+											messages.size());
+								}
+								// set the resendCount to the number of messages
+								// that require to be resent.
+								resendCount = read.size();
+								int rem = csize - read.size();
+								readFromQueue(rem, read, timeout);
+							}
+							if (!read.isEmpty()) {
+								// invoke ackCache.add() along with the
+								// resendCount
+								ackCache.add(name, read, recs, resendCount);
+							}
+						} else {
 							List<Message<M>> messages = ackCache
-									.getMessagesForResend(name, csize);
+									.getMessagesForResend(name, size);
 							if (messages != null && !messages.isEmpty()) {
 								read.addAll(messages);
 								incrementCounter(
 										Constants.MONITOR_COUNTER_RESEND,
 										messages.size());
-							}
-							// set the resendCount to the number of messages
-							// that require to be resent.
-							resendCount = read.size();
-							int rem = csize - read.size();
-							if (rem > 0) {
-								long startt = System.currentTimeMillis();
-								int count = 0;
-								try {
-									messages = queue.batch(name, rem, timeout);
-									if (messages != null
-											&& !messages.isEmpty()) {
-										count = messages.size();
-										incrementCounter(
-												Constants.MONITOR_COUNTER_READS,
-												count);
-										read.addAll(messages);
-									}
-								} finally {
-									if (count > 0)
-										timerstop(
-												Constants.MONITOR_COUNTER_READTIME,
-												startt, count);
-								}
+								List<MessageAckRecord> recs = ackCache
+										.allocateAckCache(name,
+												messages.size());
+								ackCache.add(name, read, recs, read.size());
 							}
 						}
-						if (!read.isEmpty()) {
-							// invoke ackCache.add() along with the resendCount
-							ackCache.add(name, read, recs, resendCount);
-							return read;
-						}
+					} else {
+						readFromQueue(size, read, timeout);
 					}
+					return read;
 				} finally {
 					lock.unlock();
 				}
@@ -461,6 +457,26 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 					e);
 		}
 		return null;
+	}
+
+	private void readFromQueue(int size, List<Message<M>> read, long timeout)
+			throws MessageQueueException, LockTimeoutException {
+		if (size > 0) {
+			long startt = System.currentTimeMillis();
+			int count = 0;
+			try {
+				List<Message<M>> messages = queue.batch(name, size, timeout);
+				if (messages != null && !messages.isEmpty()) {
+					count = messages.size();
+					incrementCounter(Constants.MONITOR_COUNTER_READS, count);
+					read.addAll(messages);
+				}
+			} finally {
+				if (count > 0)
+					timerstop(Constants.MONITOR_COUNTER_READTIME, startt,
+							count);
+			}
+		}
 	}
 
 	/**
@@ -575,27 +591,6 @@ public abstract class Subscriber<M> implements Configurable, AckHandler {
 				AbstractCounter.Mode.PROD);
 		if (c != null) {
 			counters.put(Constants.MONITOR_COUNTER_READTIME,
-					new String[] { c.namespace(), c.name() });
-		}
-		c = Monitoring.create(Constants.MONITOR_NAMESPACE + "." + name,
-				Constants.MONITOR_COUNTER_ACKS_CACHE_ADD, Count.class,
-				AbstractCounter.Mode.PROD);
-		if (c != null) {
-			counters.put(Constants.MONITOR_COUNTER_ACKS_CACHE_ADD,
-					new String[] { c.namespace(), c.name() });
-		}
-		c = Monitoring.create(Constants.MONITOR_NAMESPACE + "." + name,
-				Constants.MONITOR_COUNTER_ACKS_CACHE_REM, Count.class,
-				AbstractCounter.Mode.PROD);
-		if (c != null) {
-			counters.put(Constants.MONITOR_COUNTER_ACKS_CACHE_REM,
-					new String[] { c.namespace(), c.name() });
-		}
-		c = Monitoring.create(Constants.MONITOR_NAMESPACE + "." + name,
-				Constants.MONITOR_COUNTER_ACKS_CACHE_READ, Count.class,
-				AbstractCounter.Mode.PROD);
-		if (c != null) {
-			counters.put(Constants.MONITOR_COUNTER_ACKS_CACHE_READ,
 					new String[] { c.namespace(), c.name() });
 		}
 	}

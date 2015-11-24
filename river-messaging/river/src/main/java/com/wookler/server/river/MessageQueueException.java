@@ -19,7 +19,7 @@
 package com.wookler.server.river;
 
 /**
- * Default getError type used by the message queue and corresponding interfaces.
+ * Exception type escalated by the message queue and corresponding interfaces.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14
@@ -28,10 +28,24 @@ package com.wookler.server.river;
 public class MessageQueueException extends Exception {
     private static final String _PREFIX_ = "Message Queue Exception : ";
 
+    /**
+     * Message queue exception with the exception message
+     * 
+     * @param mesg
+     *            Exception message string
+     */
     public MessageQueueException(String mesg) {
         super(_PREFIX_ + mesg);
     }
 
+    /**
+     * Message queue exception with the exception message and exception cause
+     * 
+     * @param mesg
+     *            Exception message string
+     * @param inner
+     *            Exception cause
+     */
     public MessageQueueException(String mesg, Throwable inner) {
         super(_PREFIX_ + mesg, inner);
     }

@@ -25,7 +25,7 @@ import com.wookler.server.river.AckCacheStructs.MessageAckRecord;
 import java.util.List;
 
 /**
- * Abstract superclass defining the Queue Access API.
+ * Interface defining the Queue Access API.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14

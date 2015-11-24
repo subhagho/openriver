@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import com.wookler.server.common.ConfigurationException;
 import com.wookler.server.common.config.CParam;
-import com.wookler.server.common.config.CPath;
 import com.wookler.server.common.config.ConfigNode;
 import com.wookler.server.common.config.ConfigPath;
 import com.wookler.server.common.config.ConfigUtils;
@@ -32,7 +31,6 @@ import com.wookler.server.river.SubscriberAwareProcessor;
  * on the processed messages
  *
  */
-@CPath(path = "consumer")
 public class AsyncConsumer extends SubscriberAwareProcessor<String> {
 	private static final Logger log = LoggerFactory
 			.getLogger(AsyncConsumer.class);

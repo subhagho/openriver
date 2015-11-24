@@ -190,7 +190,7 @@ public class MessageStoreManager implements Configurable {
 	@CParam(name = "recycle", nested = true)
 	private RecycleStrategy					strategy;
 	private ObjectState						state				= new ObjectState();
-	@CParam(name = "backup", nested = true)
+	@CParam(name = "backup", nested = true, required = false)
 	private MessageBlockBackup				backup				= null;
 	private File							messagedir;
 	private HashMap<String, MessageBlock>	blocksSubscribed	= new HashMap<String, MessageBlock>();

@@ -70,7 +70,7 @@
                 <executor class="com.wookler.server.river.PooledExecutor"/>
                 <processor name="TEST-EXEC-CONSUMER-0" class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-0"/>
+                        <param name="subscriber.pull.name" value="TEST-RIVER-EXEC-SUBSCRIBER-0"/>
                         <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="0"/>
                     </params>
@@ -94,7 +94,7 @@
                 <processor name="TEST-EXEC-CONSUMER-1"
                            class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name"
+                        <param name="subscriber.pull.name"
                                value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
                         <param name="directory.output"
                                value="/tmp/river/test/pull"/>
@@ -104,7 +104,7 @@
                 <processor name="TEST-EXEC-CONSUMER-2"
                            class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name"
+                        <param name="subscriber.pull.name"
                                value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
                         <param name="directory.output"
                                value="/tmp/river/test/pull"/>
@@ -114,7 +114,7 @@
                 <processor name="TEST-EXEC-CONSUMER-3"
                            class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name"
+                        <param name="subscriber.pull.name"
                                value="TEST-RIVER-EXEC-SUBSCRIBER-1"/>
                         <param name="directory.output"
                                value="/tmp/river/test/pull"/>

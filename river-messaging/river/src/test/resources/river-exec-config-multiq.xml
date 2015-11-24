@@ -61,21 +61,21 @@
                 </executor>
                 <processor name="TEST-EXEC-CONSUMER-1" class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-MULTIQ-SUBSCRIBER-1"/>
+                        <param name="subscriber.pull.name" value="TEST-RIVER-MULTIQ-SUBSCRIBER-1"/>
                         <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>
                 <processor name="TEST-EXEC-CONSUMER-2" class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-MULTIQ-SUBSCRIBER-1"/>
+                        <param name="subscriber.pull.name" value="TEST-RIVER-MULTIQ-SUBSCRIBER-1"/>
                         <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
                 </processor>
                 <processor name="TEST-EXEC-CONSUMER-3" class="com.wookler.server.river.test.Consumer">
                     <params>
-                        <param name="queue.pull.name" value="TEST-RIVER-MULTIQ-SUBSCRIBER-1"/>
+                        <param name="subscriber.pull.name" value="TEST-RIVER-MULTIQ-SUBSCRIBER-1"/>
                         <param name="directory.output" value="/tmp/river/test/pull"/>
                         <param name="processor.sleep" value="-1"/>
                     </params>
@@ -106,10 +106,15 @@
                     <param name="subscriber.batch.size" value="1024"/>
                     <param name="subscriber.poll.timeout" value="100"/>
                     <param name="sleep.interval" value="100"/>
-                    <param name="subscriber.ack.required" value="false"/>
+                    <!-- <param name="subscriber.ack.required" value="false"/> -->
+                    <param name="subscriber.ack.required" value="true"/>
+                    <param name="subscriber.ack.cache.size" value="64"/>
+                    <param name="subscriber.ack.timeout" value="60000"/>
                 </params>
                 <executor class="com.wookler.server.river.PooledExecutor" >
-                    <param name="executor.pool.size" value="1"/>
+                    <params>
+                        <param name="executor.pool.size" value="1"/>
+                    </params>
                 </executor>
                 <processor name="TEST-EXEC-CONSUMERP-0" class="com.wookler.server.river.test.ConsumerP">
                     <params>

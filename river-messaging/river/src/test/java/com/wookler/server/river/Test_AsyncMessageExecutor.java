@@ -93,7 +93,7 @@ public class Test_AsyncMessageExecutor extends TestCase {
         }
         Thread.sleep(5 * 60 * 1000);
         // cleanup after each test
-        // FileUtils.emptydir(new File("/tmp/river"), true);
+         FileUtils.emptydir(new File("/tmp/river"), true);
     }
 
     public void test() throws Exception {

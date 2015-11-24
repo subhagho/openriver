@@ -27,79 +27,90 @@ import com.wookler.server.common.utils.LogUtils;
  * @created 14/09/14
  */
 public abstract class AbstractQueueService implements Configurable {
-	public static final class Constants {
-		public static final String CONFIG_NODE_NAME = "services";
-		public static final String CONFIG_PROTOCOL = "service.protocol";
-		public static final String CONFIG_Q_TIMEOUT = "service.queue.timeout";
-		public static final String CONFIG_Q_BATCHSIZE = "service.queue.batch.size";
+    public static final class Constants {
+        public static final String CONFIG_NODE_NAME = "services";
+        public static final String CONFIG_PROTOCOL = "service.protocol";
+        public static final String CONFIG_Q_TIMEOUT = "service.queue.timeout";
+        public static final String CONFIG_Q_BATCHSIZE = "service.queue.batch.size";
 
-		public static final String CONFIG_SERVICE_READER = "subscriber";
-		public static final String CONFIG_SERVICE_WRITER = "publisher";
-		public static final String CONFIG_SERVICE_OPTIONAL = "service";
-		public static final String CONFIG_SERVICE_ADMIN = "admin";
+        public static final String CONFIG_SERVICE_READER = "subscriber";
+        public static final String CONFIG_SERVICE_WRITER = "publisher";
+        public static final String CONFIG_SERVICE_OPTIONAL = "service";
+        public static final String CONFIG_SERVICE_ADMIN = "admin";
 
-		public static final String CONFIG_ATTR_PACKAGE = "package";
-		public static final String CONFIG_ATTR_PATH = "path";
-	}
+        public static final String CONFIG_ATTR_PACKAGE = "package";
+        public static final String CONFIG_ATTR_PATH = "path";
+    }
 
-	protected ProcessState state = new ProcessState();
+    protected ProcessState state = new ProcessState();
 
-	public ProcessState state() {
-		return state;
-	}
+    /**
+     * Get the process state
+     * 
+     * @return state
+     * 
+     */
+    public ProcessState state() {
+        return state;
+    }
 
-	protected void exception(Throwable t) {
-		state.setState(EProcessState.Exception).setError(t);
-	}
+    /**
+     * Set the process state to exception with the exception cause
+     * 
+     * @param t
+     *            Exception cause
+     */
+    protected void exception(Throwable t) {
+        state.setState(EProcessState.Exception).setError(t);
+    }
 
-	/**
-	 * Start this Service handler.
-	 *
-	 * @throws ServiceException
-	 */
-	public abstract void start() throws ServiceException;
+    /**
+     * Start this Service handler.
+     *
+     * @throws ServiceException
+     */
+    public abstract void start() throws ServiceException;
 
-	/**
-	 * Check the setState of this service handler. If handler has not been
-	 * initialized, call configure() and start(). Since this is a servlet, you
-	 * can't be sure if the current instance has been initialized.
-	 *
-	 * @throws com.wookler.server.common.ConfigurationException
-	 * @throws StateException
-	 * @throws ServiceException
-	 */
-	protected void checkState() throws ConfigurationException, StateException,
-			ServiceException {
-		try {
-			if (state.getState() == EProcessState.Unknown) {
-				synchronized (this) {
-					if (state.getState() == EProcessState.Unknown) {
-						configure(Env.get().config().node());
-						start();
-					}
-				}
-			}
-			ProcessState.check(state, EProcessState.Running, getClass());
-		} catch (ConfigurationException e) {
-			LogUtils.stacktrace(getClass(), e);
-			throw e;
-		} catch (StateException e) {
-			LogUtils.stacktrace(getClass(), e);
-			throw e;
-		} catch (ServiceException e) {
-			LogUtils.stacktrace(getClass(), e);
-			throw e;
-		}
-	}
+    /**
+     * Check the setState of this service handler. If handler has not been
+     * initialized, call configure() and start(). Since this is a servlet, you
+     * can't be sure if the current instance has been initialized.
+     *
+     * @throws ConfigurationException
+     * @throws StateException
+     * @throws ServiceException
+     */
+    protected void checkState() throws ConfigurationException, StateException, ServiceException {
+        try {
+            if (state.getState() == EProcessState.Unknown) {
+                synchronized (this) {
+                    if (state.getState() == EProcessState.Unknown) {
+                        configure(Env.get().config().node());
+                        start();
+                    }
+                }
+            }
+            ProcessState.check(state, EProcessState.Running, getClass());
+        } catch (ConfigurationException e) {
+            LogUtils.stacktrace(getClass(), e);
+            throw e;
+        } catch (StateException e) {
+            LogUtils.stacktrace(getClass(), e);
+            throw e;
+        } catch (ServiceException e) {
+            LogUtils.stacktrace(getClass(), e);
+            throw e;
+        }
+    }
 
-	/**
-	 * Get the REST service path for this service.
-	 *
-	 * @param type
-	 *            - Service subtype
-	 * @return
-	 */
-	public static String servicePath(String type) {
-		return String.format("%s.%s", Constants.CONFIG_NODE_NAME, type);
-	}
+    /**
+     * Get the REST service path for this service.
+     *
+     * @param type
+     *            - Service subtype
+     * @return the service path along with subtype
+     */
+    public static String servicePath(String type) {
+        return String.format("%s.%s", Constants.CONFIG_NODE_NAME, type);
+    }
 }

@@ -28,11 +28,26 @@ package com.wookler.server.common;
 public class ConfigurationException extends Exception {
     private static final String _PREFIX_ = "Configuration Exception : ";
 
+    /**
+     * Configuration exception with the corresponding exception message
+     * 
+     * @param mesg
+     *            Exception message
+     */
     public ConfigurationException(String mesg) {
         super(_PREFIX_ + mesg);
     }
 
+    /**
+     * Configuration exception with the exception message and excpetion cause
+     * 
+     * @param mesg
+     *            Exception message
+     * @param inner
+     *            Exception cause
+     */
     public ConfigurationException(String mesg, Throwable inner) {
-        super(String.format("%s%s : [error=%s]", _PREFIX_, mesg, inner.getLocalizedMessage()), inner);
+        super(String.format("%s%s : [error=%s]", _PREFIX_, mesg, inner.getLocalizedMessage()),
+                inner);
     }
 }

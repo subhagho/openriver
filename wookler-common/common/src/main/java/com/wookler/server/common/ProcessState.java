@@ -43,13 +43,13 @@ public class ProcessState extends AbstractState<EProcessState> {
 			if (current.state == EProcessState.Exception) {
 				throw new StateException(EProcessState.class.getSimpleName(),
 						String.format(
-								"[%s] Expected State [%s] Current State [%s",
+								"[%s] Expected State [%s] Current State [%s]",
 								owner.getCanonicalName(), expected.name(),
 								current.state.name()), current.getError());
 			} else {
 				throw new StateException(EProcessState.class.getSimpleName(),
 						String.format(
-								"[%s] Expected State [%s] Current State [%s",
+								"[%s] Expected State [%s] Current State [%s]",
 								owner.getCanonicalName(), expected.name(),
 								current.state.name()));
 			}

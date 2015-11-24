@@ -28,10 +28,29 @@ package com.wookler.server.common;
 public class StateException extends Exception {
     private static final String _PREFIX_ = "Invalid State : ";
 
+    /**
+     * StateException capturing the exception type and the corresponding message
+     * 
+     * @param type
+     *            Exception type
+     * @param mesg
+     *            Exception message
+     */
     public StateException(String type, String mesg) {
         super(String.format("[%s] %s %s", type, _PREFIX_, mesg));
     }
 
+    /**
+     * StateException capturing the exception type, exception message and the
+     * corresponding cause.
+     * 
+     * @param type
+     *            Exception type
+     * @param mesg
+     *            Exception message
+     * @param inner
+     *            Exception cause
+     */
     public StateException(String type, String mesg, Throwable inner) {
         super(String.format("[%s] %s %s", type, _PREFIX_, mesg), inner);
     }

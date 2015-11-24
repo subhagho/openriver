@@ -26,10 +26,24 @@ package com.wookler.server.common.model;
 public class ServiceException extends Exception {
     private static final String _PREFIX_ = "Service Exception : ";
 
+    /**
+     * Service exception with the corresponding message
+     * 
+     * @param mesg
+     *            Exception message
+     */
     public ServiceException(String mesg) {
         super(_PREFIX_ + mesg);
     }
 
+    /**
+     * Service exception with the corresponding message and the exception cause
+     * 
+     * @param mesg
+     *            Exception message
+     * @param inner
+     *            Exception cause
+     */
     public ServiceException(String mesg, Throwable inner) {
         super(_PREFIX_ + mesg, inner);
     }

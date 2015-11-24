@@ -50,6 +50,7 @@ import java.util.List;
 
 /**
  * Queue REST Service implementation for Message Subscription in JSON format.
+ * Supports http poll, fetch and ack calls for messages from in the queue
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 14/09/14
@@ -58,12 +59,14 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
     private static final Logger log = LoggerFactory.getLogger(QueueJsonReaderService.class);
 
     private RestJsonProtocolHandler<M> handler;
-    private long q_timeout = 10 * 1000; // Default Queue operation timeout.
-    private int q_batchsize = 1024; // Default Queue batch size.
+    /** Default Queue operation timeout. */
+    private long q_timeout = 10 * 1000;
+    /** Default Queue batch size. */
+    private int q_batchsize = 1024;
 
     /**
-     * Configure this instance of the Read Services.
-     * Sample:
+     * Configure this instance of the Subscriber Service. Sample:
+     * 
      * <pre>
      * {@code
      *     <subscriber class="[service class]" package="[package]">
@@ -76,36 +79,44 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
      * }
      * </pre>
      *
-     * @param config - Configuration node for this instance.
+     * @param config
+     *            - Configuration node for this instance.
      * @throws ConfigurationException
      */
     @SuppressWarnings("unchecked")
-	@Override
+    @Override
     public void configure(ConfigNode config) throws ConfigurationException {
         try {
-            if (!(config instanceof ConfigPath))
-                throw new ConfigurationException(String.format("Invalid config node type. [expected:%s][actual:%s]",
-                                                                      ConfigPath.class.getCanonicalName(),
-                                                                      config.getClass().getCanonicalName()));
+            if (!(config instanceof ConfigPath)) {
+                throw new ConfigurationException(String.format(
+                        "Invalid config node type. [expected:%s][actual:%s]",
+                        ConfigPath.class.getCanonicalName(), config.getClass().getCanonicalName()));
+            }
             ConfigPath cp = (ConfigPath) config;
             ConfigNode node = cp.search(servicePath(Constants.CONFIG_SERVICE_READER));
-            if (node == null)
-                throw new ConfigurationException("No consumer service specified. [node=" + cp.toString() + "]");
-            if (!(node instanceof ConfigPath))
-                throw new ConfigurationException(String.format("Invalid config node type. [expected:%s][actual:%s]",
-                                                                      ConfigPath.class.getCanonicalName(),
-                                                                      node.getClass().getCanonicalName()));
+            if (node == null) {
+                throw new ConfigurationException("No consumer service specified. [node="
+                        + cp.toString() + "]");
+            }
+            if (!(node instanceof ConfigPath)) {
+                throw new ConfigurationException(String.format(
+                        "Invalid config node type. [expected:%s][actual:%s]",
+                        ConfigPath.class.getCanonicalName(), node.getClass().getCanonicalName()));
+            }
 
             cp = (ConfigPath) node;
             ConfigParams ca = ConfigUtils.params(cp);
             String c = ca.param(Constants.CONFIG_PROTOCOL);
-            if (StringUtils.isEmpty(c))
-                throw new ConfigurationException("Missing attribute. [name=" + Constants.CONFIG_PROTOCOL + "]");
+            if (StringUtils.isEmpty(c)) {
+                throw new ConfigurationException("Missing attribute. [name="
+                        + Constants.CONFIG_PROTOCOL + "]");
+            }
             Class<?> cls = Class.forName(c);
             Object o = cls.newInstance();
-            if (!(o instanceof RestJsonProtocolHandler))
-                throw new ConfigurationException("Invalid protocol handler specified. [class=" +
-                                                         cls.getCanonicalName() + "]");
+            if (!(o instanceof RestJsonProtocolHandler)) {
+                throw new ConfigurationException("Invalid protocol handler specified. [class="
+                        + cls.getCanonicalName() + "]");
+            }
             handler = (RestJsonProtocolHandler<M>) o;
 
             if (ca.contains(Constants.CONFIG_Q_TIMEOUT)) {
@@ -117,16 +128,7 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
             }
 
             state.setState(EProcessState.Initialized);
-        } catch (DataNotFoundException e) {
-            exception(e);
-            throw new ConfigurationException("Error configuring Json Service.", e);
-        } catch (ClassNotFoundException e) {
-            exception(e);
-            throw new ConfigurationException("Error configuring Json Service.", e);
-        } catch (InstantiationException e) {
-            exception(e);
-            throw new ConfigurationException("Error configuring Json Service.", e);
-        } catch (IllegalAccessException e) {
+        } catch (DataNotFoundException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             exception(e);
             throw new ConfigurationException("Error configuring Json Service.", e);
         } catch (ConfigurationException e) {
@@ -160,27 +162,29 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
     }
 
     /**
-     * Message Poll service call. Polls for the next message in the queue, waiting for the specified timeout. If
-     * timeout
-     * is not
-     * specified then the default timeout is used.
+     * Message Poll service call. Polls for the next message in the queue,
+     * waiting for the specified timeout. If timeout is not specified then the
+     * default timeout is used.
      *
-     * @param req        - Servlet Request header.
-     * @param queue      - Queue name.
-     * @param subscriber - Subscriber name.
-     * @param timeout    - Poll timeout.
+     * @param req
+     *            - Servlet Request header.
+     * @param queue
+     *            - Queue name.
+     * @param subscriber
+     *            - Subscriber name.
+     * @param timeout
+     *            - Poll timeout.
      * @return - REST Operation response.
      * @throws ServiceException
      */
     @SuppressWarnings("unchecked")
-	@Path("/poll/{queue}/{subscriber}")
+    @Path("/poll/{queue}/{subscriber}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public JResponse<RestOpResponse> poll(@Context final HttpServletRequest req, @PathParam("queue") String queue,
-                                          @PathParam("subscriber") String subscriber,
-                                          @QueryParam("timeout") @DefaultValue("-1") long timeout)
-            throws ServiceException {
+    public JResponse<RestOpResponse> poll(@Context final HttpServletRequest req,
+            @PathParam("queue") String queue, @PathParam("subscriber") String subscriber,
+            @QueryParam("timeout") @DefaultValue("-1") long timeout) throws ServiceException {
         RestOpResponse response = new RestOpResponse();
         response.setOperation(EOpType.Receive);
         response.setStarttime(System.currentTimeMillis());
@@ -221,30 +225,34 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
     }
 
     /**
-     * Message Fetch service call. Fetches the next batch of messages in the queue, waiting for the specified timeout.
-     * If timeout is not
-     * specified then the default timeout is used. #of messages is controlled by the batchsize parameter. If none
-     * specified, the default configured value is used.
+     * Message Fetch service call. Fetches the next batch of messages in the
+     * queue, waiting for the specified timeout. If timeout is not specified
+     * then the default timeout is used. #of messages is controlled by the
+     * batchsize parameter. If none specified, the default configured value is
+     * used.
      *
-     * @param req        - Servlet Request header.
-     * @param queue      - Queue name.
-     * @param subscriber - Subscriber name.
-     * @param timeout    - Poll timeout.
-     * @param batchsize  - Fetch batch sise.
+     * @param req
+     *            - Servlet Request header.
+     * @param queue
+     *            - Queue name.
+     * @param subscriber
+     *            - Subscriber name.
+     * @param timeout
+     *            - Poll timeout.
+     * @param batchsize
+     *            - Fetch batch sise.
      * @return - REST Operation response.
      * @throws ServiceException
      */
     @SuppressWarnings("unchecked")
-	@Path("/batch/poll/{queue}/{subscriber}")
+    @Path("/batch/poll/{queue}/{subscriber}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public JResponse<RestOpResponse> fetch(@Context final HttpServletRequest req, @PathParam("queue") String queue,
-                                           @PathParam("subscriber") String subscriber,
-                                           @QueryParam(RestConstants.QUERY_PARAM_TIMEOUT) @DefaultValue("-1")
-                                           long timeout,
-                                           @QueryParam(RestConstants.QUERY_PARAM_BATCHSIZE) @DefaultValue("-1")
-                                           int batchsize)
+    public JResponse<RestOpResponse> fetch(@Context final HttpServletRequest req,
+            @PathParam("queue") String queue, @PathParam("subscriber") String subscriber,
+            @QueryParam(RestConstants.QUERY_PARAM_TIMEOUT) @DefaultValue("-1") long timeout,
+            @QueryParam(RestConstants.QUERY_PARAM_BATCHSIZE) @DefaultValue("-1") int batchsize)
             throws ServiceException {
         RestOpResponse response = new RestOpResponse();
         response.setOperation(EOpType.ReceiveBatch);
@@ -277,8 +285,9 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
                     response.setStatus(EServiceResponse.Failed).getStatus()
                             .setError(new DataNotFoundException("No records fetched from queue."));
                 }
-            } else
+            } else {
                 throw new ServiceException("Invalid Queue name. [name=" + queue + "]");
+            }
         } catch (ServiceException e) {
             LogUtils.error(getClass(), e, log);
             LogUtils.stacktrace(getClass(), e, log);
@@ -296,20 +305,24 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
     /**
      * Message ACK service call. ACK for the specified message ID.
      *
-     * @param req        - Servlet Request header.
-     * @param message_id - Message ID to ACK.
-     * @param queue      - Queue name.
-     * @param subscriber - Subscriber name.
+     * @param req
+     *            - Servlet Request header.
+     * @param message_id
+     *            - Message ID to ACK.
+     * @param queue
+     *            - Queue name.
+     * @param subscriber
+     *            - Subscriber name.
      * @return - REST Operation response.
      * @throws ServiceException
      */
     @SuppressWarnings("unchecked")
-	@Path("/ack/{queue}/{subscriber}")
+    @Path("/ack/{queue}/{subscriber}")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public JResponse<RestOpResponse> ack(@Context final HttpServletRequest req, String message_id,
-                                         @PathParam("queue") String queue, @PathParam("subscriber") String subscriber)
+            @PathParam("queue") String queue, @PathParam("subscriber") String subscriber)
             throws ServiceException {
         RestOpResponse response = new RestOpResponse();
         response.setOperation(EOpType.Ack);
@@ -321,16 +334,21 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
                 Queue<M> q = (Queue<M>) QueueRestServer.context().queue(queue);
                 Subscriber<M> s = q.subscriber(subscriber);
                 if (s == null)
-                    throw new ServiceException("Invalid Subscriber specified. [name=" + subscriber + "]");
+                    throw new ServiceException("Invalid Subscriber specified. [name=" + subscriber
+                            + "]");
                 if (!s.ackrequired()) {
-                    response.setStatus(EServiceResponse.Failed).getStatus()
-                            .setError(new ServiceException("Subscriber [" + subscriber + "] does not require ACK."));
+                    response.setStatus(EServiceResponse.Failed)
+                            .getStatus()
+                            .setError(
+                                    new ServiceException("Subscriber [" + subscriber
+                                            + "] does not require ACK."));
                 } else {
                     s.ack(message_id);
                     response.setStatus(EServiceResponse.Success);
                 }
-            } else
+            } else {
                 throw new ServiceException("Invalid Queue name. [name=" + queue + "]");
+            }
         } catch (ServiceException e) {
             LogUtils.error(getClass(), e, log);
             LogUtils.stacktrace(getClass(), e, log);
@@ -346,23 +364,28 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
     }
 
     /**
-     * Message ACK batch service call. ACK for the specified batch of message IDs.
+     * Message ACK batch service call. ACK for the specified batch of message
+     * IDs.
      *
-     * @param req        - Servlet Request header.
-     * @param messages   - List of message IDs.
-     * @param queue      - Queue name.
-     * @param subscriber - Subscriber name.
+     * @param req
+     *            - Servlet Request header.
+     * @param messages
+     *            - List of message IDs.
+     * @param queue
+     *            - Queue name.
+     * @param subscriber
+     *            - Subscriber name.
      * @return - REST Operation response.
      * @throws ServiceException
      */
     @SuppressWarnings("unchecked")
-	@Path("/batch/ack/{queue}/{subscriber}")
+    @Path("/batch/ack/{queue}/{subscriber}")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public JResponse<RestOpResponse> ack(@Context final HttpServletRequest req, BatchJsonMessages messages,
-                                         @PathParam("queue") String queue, @PathParam("subscriber") String subscriber)
-            throws ServiceException {
+    public JResponse<RestOpResponse> ack(@Context final HttpServletRequest req,
+            BatchJsonMessages messages, @PathParam("queue") String queue,
+            @PathParam("subscriber") String subscriber) throws ServiceException {
         RestOpResponse response = new RestOpResponse();
         response.setStarttime(System.currentTimeMillis());
         try {
@@ -372,18 +395,23 @@ public class QueueJsonReaderService<M> extends AbstractQueueService {
                 Queue<M> q = (Queue<M>) QueueRestServer.context().queue(queue);
                 Subscriber<M> s = q.subscriber(subscriber);
                 if (s == null)
-                    throw new ServiceException("Invalid Subscriber specified. [name=" + subscriber + "]");
+                    throw new ServiceException("Invalid Subscriber specified. [name=" + subscriber
+                            + "]");
                 if (!s.ackrequired()) {
-                    response.setStatus(EServiceResponse.Failed).getStatus()
-                            .setError(new ServiceException("Subscriber [" + subscriber + "] does not require ACK."));
+                    response.setStatus(EServiceResponse.Failed)
+                            .getStatus()
+                            .setError(
+                                    new ServiceException("Subscriber [" + subscriber
+                                            + "] does not require ACK."));
                 } else {
                     List<String> m_ids = new ArrayList<String>(messages.getSize());
                     m_ids.addAll(messages.getMessages());
                     s.ack(m_ids);
                     response.setStatus(EServiceResponse.Success);
                 }
-            } else
+            } else {
                 throw new ServiceException("Invalid Queue name. [name=" + queue + "]");
+            }
         } catch (ServiceException e) {
             LogUtils.error(getClass(), e, log);
             LogUtils.stacktrace(getClass(), e, log);

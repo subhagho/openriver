@@ -22,6 +22,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.wookler.server.common.utils.LogUtils;
 
+// TODO: Auto-generated Javadoc
 /**
  * Abstract base class to be implemented to handle message records
  * transformations. Data transformations are in the byte format to be saved into
@@ -29,96 +30,119 @@ import com.wookler.server.common.utils.LogUtils;
  * Buffer.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
+ * @param <M>
+ *            the generic type
  * @created 12/08/14
  */
 public abstract class ByteConvertor<M> {
-	@SuppressWarnings("serial")
-	public static class ConversionException extends Exception {
-		private static final String _PREFIX_ = "Byte Conversion Exception : ";
 
-		public ConversionException(String mesg) {
-			super(_PREFIX_ + mesg);
-		}
+    /**
+     * Exception type escalated as part of conversion of message into byte array
+     * and vice-versa
+     */
+    @SuppressWarnings("serial")
+    public static class ConversionException extends Exception {
 
-		public ConversionException(String mesg, Throwable inner) {
-			super(_PREFIX_ + mesg, inner);
-		}
-	}
+        /** The Constant _PREFIX_. */
+        private static final String _PREFIX_ = "Byte Conversion Exception : ";
 
-	/**
-	 * Read records and transform into the desired message format.
-	 *
-	 * @param data
-	 *            - Data in bytes.
-	 * @return - Message
-	 * @throws ConversionException
-	 */
-	public Message<M> read(byte[] data) throws ConversionException {
-		try {
-			MessageBuf.MessageProto m = MessageBuf.MessageProto.parseFrom(data);
-			Message<M> message = new Message<M>();
-			message.header().id(m.getHeader().getId());
-			message.header().timestamp(m.getHeader().getTimestamp());
+        /**
+         * Instantiates a new conversion exception.
+         *
+         * @param mesg
+         *            the exception message
+         */
+        public ConversionException(String mesg) {
+            super(_PREFIX_ + mesg);
+        }
 
-			M d = message(m.getData().toByteArray());
-			if (d == null)
-				throw new ConversionException(
-						"Invalid message. Data serializer returned null message.");
-			message.data(d);
+        /**
+         * Instantiates a new conversion exception.
+         *
+         * @param mesg
+         *            the exception message
+         * @param inner
+         *            the exception cause
+         */
+        public ConversionException(String mesg, Throwable inner) {
+            super(_PREFIX_ + mesg, inner);
+        }
+    }
 
-			return message;
-		} catch (InvalidProtocolBufferException e) {
-			throw new ConversionException("Error de-serializing to ProtoBuf.",
-					e);
-		}
-	}
+    /**
+     * Read records and transform into the desired message format.
+     *
+     * @param data
+     *            - Data in bytes.
+     * @return - Message
+     * @throws ConversionException
+     *             the conversion exception
+     */
+    public Message<M> read(byte[] data) throws ConversionException {
+        try {
+            MessageBuf.MessageProto m = MessageBuf.MessageProto.parseFrom(data);
+            Message<M> message = new Message<M>();
+            message.header().id(m.getHeader().getId());
+            message.header().timestamp(m.getHeader().getTimestamp());
 
-	/**
-	 * Get byte transformed records to be persisted in the queues.
-	 *
-	 * @param message
-	 *            - Message Object
-	 * @return - Data as byte array.
-	 * @throws ConversionException
-	 */
-	public byte[] write(Message<M> message) throws ConversionException {
-		byte[] data = data(message.data());
-		if (data == null)
-			throw new ConversionException(
-					"Invalid Message records. Data serializer returned null.");
-		ByteString bs = ByteString.copyFrom(data);
+            M d = message(m.getData().toByteArray());
+            if (d == null)
+                throw new ConversionException(
+                        "Invalid message. Data serializer returned null message.");
+            message.data(d);
 
-		MessageBuf.HeaderProto header = MessageBuf.HeaderProto.newBuilder()
-				.setId(message.header().id())
-				.setTimestamp(message.header().timestamp()).build();
-		MessageBuf.MessageProto m = MessageBuf.MessageProto.newBuilder()
-				.setHeader(header).setData(bs).build();
-		byte[] ser = m.toByteArray();
-		if (ser.length > 64 * 1024) {
-			LogUtils.debug(getClass(),
-					"Data length exceeded [" + message.data() + "]");
-		}
-		return ser;
-	}
+            return message;
+        } catch (InvalidProtocolBufferException e) {
+            throw new ConversionException("Error de-serializing to ProtoBuf.", e);
+        }
+    }
 
-	/**
-	 * Abstract method to serialize the message records to byte format, for
-	 * persistence into the queue.
-	 *
-	 * @param message
-	 *            - Message to serialize.
-	 * @return - Byte serialized records.
-	 * @throws ConversionException
-	 */
-	protected abstract byte[] data(M message) throws ConversionException;
+    /**
+     * Get byte transformed records to be persisted in the queues.
+     *
+     * @param message
+     *            - Message Object
+     * @return - Data as byte array.
+     * @throws ConversionException
+     *             the conversion exception
+     */
+    public byte[] write(Message<M> message) throws ConversionException {
+        byte[] data = data(message.data());
+        if (data == null)
+            throw new ConversionException("Invalid Message records. Data serializer returned null.");
+        ByteString bs = ByteString.copyFrom(data);
 
-	/**
-	 * Abstract method to de-serialize the byte format to a message.
-	 *
-	 * @param data
-	 *            - Byte records.
-	 * @return - Converted message.
-	 * @throws ConversionException
-	 */
-	protected abstract M message(byte[] data) throws ConversionException;
+        MessageBuf.HeaderProto header = MessageBuf.HeaderProto.newBuilder()
+                .setId(message.header().id()).setTimestamp(message.header().timestamp()).build();
+        MessageBuf.MessageProto m = MessageBuf.MessageProto.newBuilder().setHeader(header)
+                .setData(bs).build();
+        byte[] ser = m.toByteArray();
+        if (ser.length > 64 * 1024) {
+            LogUtils.debug(getClass(), "Data length exceeded [" + message.data() + "]");
+        }
+        return ser;
+    }
+
+    /**
+     * Abstract method to serialize the message records to byte format, for
+     * persistence into the queue.
+     *
+     * @param message
+     *            - Message to serialize.
+     * @return - Byte serialized records.
+     * @throws ConversionException
+     *             the conversion exception
+     */
+    protected abstract byte[] data(M message) throws ConversionException;
+
+    /**
+     * Abstract method to de-serialize the byte format to a message.
+     *
+     * @param data
+     *            - Byte records.
+     * @return - Converted message.
+     * @throws ConversionException
+     *             the conversion exception
+     */
+    protected abstract M message(byte[] data) throws ConversionException;
 }

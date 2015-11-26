@@ -15,6 +15,7 @@
 				<param name="executor.pool.size" value="1" />
 			</params>
 		</task-manager>
+		<module name="SAMPLE-EVENT-LOGGER" />
 	</env>
 	<river>
 		<test>
@@ -36,7 +37,7 @@
 			</recycleStrategy>
 			<backup>
 				<params>
-					<param name="backup.directory" value="/tmp/test/recycle/backup" />
+					<param name="backup.directory" value="/tmp/test/recycle/backup/${date, yyyy/MM/dd}/" />
 					<param name="backup.count" value="10" />
 					<param name="backup.compress" value="true" />
 				</params>

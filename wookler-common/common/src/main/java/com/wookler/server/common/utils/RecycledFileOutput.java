@@ -111,6 +111,9 @@ public class RecycledFileOutput implements Configurable {
 				runner = new Runner(backupQueue, backupHelper);
 				Env.get().taskmanager().addtask(runner);
 			}
+			if (!this.directory.exists()) {
+				this.directory.mkdirs();
+			}
 			stream = new FileOutputStream(file, append);
 		} catch (Exception e) {
 			throw new ConfigurationException(

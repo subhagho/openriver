@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
 
 import com.google.common.base.Preconditions;
 import com.wookler.server.common.Env;
@@ -24,7 +25,7 @@ import com.wookler.server.common.config.Config;
  * @date 24-Nov-2015
  */
 public class PropertySubstitute {
-	private static final String REGEX = "(\\$\\{\\w+\\})";
+	private static final String REGEX = "(\\$\\{.+\\})";
 
 	public static final String substitute(String format, Object source,
 			boolean useEnv) throws Exception {
@@ -77,6 +78,25 @@ public class PropertySubstitute {
 
 	private static final String getVarValue(String var, Object source,
 			boolean env) throws Exception {
+		if (var.indexOf(',') > 0) {
+			String[] parts = var.split(",");
+			String type = parts[0];
+			if (!StringUtils.isEmpty(type)) {
+				type = type.trim();
+				if (type.equalsIgnoreCase("date")) {
+					DateTime dt = new DateTime();
+					String format = parts[1];
+					if (!StringUtils.isEmpty(format)) {
+						return dt.toString(format.trim());
+					} else {
+						return dt.toString();
+					}
+				}
+			}
+		}
+		if (var.equalsIgnoreCase("date")) {
+			return new DateTime().toString();
+		}
 		if (source != null) {
 			Class<?> type = source.getClass();
 			Field[] fields = ReflectionUtils.getAllFields(type);

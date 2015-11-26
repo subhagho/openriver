@@ -23,6 +23,9 @@ import com.wookler.server.river.ByteConvertor;
 import java.io.UnsupportedEncodingException;
 
 /**
+ * String message converter implementation to convert String message to byte
+ * array and vice versa
+ * 
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 20/08/14
  */

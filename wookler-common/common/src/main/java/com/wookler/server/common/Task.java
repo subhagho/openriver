@@ -39,10 +39,24 @@ public class Task implements Callable<Task.TaskResponse> {
 	public static final class TaskException extends Exception {
         private static final String _PREFIX_ = "Task Execution Error : ";
 
+        /**
+         * Instantiates a new task exception with exception message.
+         *
+         * @param mesg 
+         *      the exception message
+         */
         public TaskException(String mesg) {
             super(_PREFIX_ + mesg);
         }
 
+        /**
+         * Instantiates a new task exception with exception message and exception cause.
+         *
+         * @param mesg 
+         *      the exception message
+         * @param inner 
+         *      the exception cause
+         */
         public TaskException(String mesg, Throwable inner) {
             super(_PREFIX_ + mesg, inner);
         }

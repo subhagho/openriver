@@ -34,7 +34,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 20/08/14
  */
-//@CPath(path = "consumer")
 public class Consumer extends Processor<String>implements Runnable {
 	private static final Logger log = LoggerFactory.getLogger(Consumer.class);
 

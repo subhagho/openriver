@@ -16,6 +16,7 @@
   -->
 <configuration>
     <env>
+        <module name="TEST_RIVER_RECOVER_EXEC" />
         <monitor>
             <params>
                 <param name="app.name" value="TEST-RIVER"/>

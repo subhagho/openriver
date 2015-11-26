@@ -203,8 +203,8 @@ public class FileBackupHelper implements Configurable {
 
 	}
 
-	private String getBackupFilename(File source) {
-		String cf = String.format("%s:%d", TimeUtils.now("yyyy.MM.dd.HH.mm"),
+	private String getBackupFilename(File source) throws Exception {
+		String cf = String.format("%s-%d", TimeUtils.now("HH-mm"),
 				sequence.incrementAndGet());
 		String fname = FileUtils.insertExtension(source, cf);
 		if (compress)
@@ -212,6 +212,12 @@ public class FileBackupHelper implements Configurable {
 		else
 			fname = Constants.getBackupFilename(fname);
 
+		String dir = PropertySubstitute.substitute(backupDirectoryName, null,
+				true);
+		backupDirectory = new File(dir);
+		if (!backupDirectory.exists())
+			backupDirectory.mkdirs();
+		
 		fname = String.format("%s/%s", backupDirectory.getAbsolutePath(),
 				fname);
 		return fname;
@@ -306,9 +312,9 @@ public class FileBackupHelper implements Configurable {
 	public void configure(ConfigNode config) throws ConfigurationException {
 		try {
 			ConfigUtils.parse(config, this);
-			backupDirectoryName = PropertySubstitute
-					.substitute(backupDirectoryName, null, true);
-			backupDirectory = new File(backupDirectoryName);
+			String dir = PropertySubstitute.substitute(backupDirectoryName,
+					null, true);
+			backupDirectory = new File(dir);
 			if (!backupDirectory.exists()) {
 				backupDirectory.mkdirs();
 			} else {

@@ -19,11 +19,20 @@ package com.wookler.server.common;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * Monitored Lock is an extension of {@link ReentrantLock} with support to get
+ * the current owner of the lock.
+ * 
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 13/01/15
  */
 @SuppressWarnings("serial")
 public class MonitoredLock extends ReentrantLock {
+
+    /**
+     * Get the current owner of the lock
+     *
+     * @return the owner thread
+     */
     public Thread owner() {
         return getOwner();
     }

@@ -29,28 +29,60 @@ public class Message<M> {
      * Message header.
      */
     public static final class Header {
+        /**
+         * unique id corresponding to message
+         * (<queuename>-<creationtime>-<increasing-seq>)
+         */
         private String id;
+        /** block id corresponding to {@link MessageDataBlock} */
         private String blockid;
+        /** record index with the message block */
         private long blockindex;
+        /** message creation time */
         private long timestamp;
+        /** message send time */
         private long sendtime;
 
+        /**
+         * set the block id corresponding to {@link MessageDataBlock}
+         *
+         * @param blockid
+         *            the blockid
+         * @return the header self
+         */
         public Header blockid(String blockid) {
             this.blockid = blockid;
 
             return this;
         }
 
+        /**
+         * get the blockid
+         *
+         * @return the blockid
+         */
         public String blockid() {
             return blockid;
         }
 
+        /**
+         * set the block index w.r.t to the message record within the block
+         *
+         * @param blockindex
+         *            the blockindex
+         * @return the header self
+         */
         public Header blockindex(long blockindex) {
             this.blockindex = blockindex;
 
             return this;
         }
 
+        /**
+         * get the blockindex.
+         *
+         * @return the blockindex
+         */
         public long blockindex() {
             return blockindex;
         }
@@ -58,7 +90,8 @@ public class Message<M> {
         /**
          * Unique ID generated for this message instance.
          *
-         * @param id - Unique Message ID.
+         * @param id
+         *            - Unique Message ID.
          * @return - Self.
          */
         public Header id(String id) {
@@ -79,7 +112,8 @@ public class Message<M> {
         /**
          * Set the message instance creation timestamp.
          *
-         * @param timestamp - Creation timestamp.
+         * @param timestamp
+         *            - Creation timestamp.
          * @return - Self.
          */
         public Header timestamp(long timestamp) {
@@ -100,7 +134,8 @@ public class Message<M> {
         /**
          * Set the timestamp this message was de-queued.
          *
-         * @param sendtime - De-queue timestamp
+         * @param sendtime
+         *            - De-queue timestamp
          * @return - Self.
          */
         public Header sendtime(long sendtime) {
@@ -112,7 +147,7 @@ public class Message<M> {
         /**
          * Get the timestamp this message was de-queued.
          *
-         * @return -  De-queue timestamp
+         * @return - De-queue timestamp
          */
         public long sendtime() {
             return sendtime;
@@ -133,12 +168,20 @@ public class Message<M> {
         }
     }
 
+    /** header part of the Message */
     private Header header = new Header();
+    /** data containing the actual info */
     private M data;
 
     public Message() {
     }
 
+    /**
+     * Instantiates a new message with the copy of the specified header
+     *
+     * @param header
+     *            the header
+     */
     public Message(Header header) {
         this.header = header.copy();
     }
@@ -155,7 +198,8 @@ public class Message<M> {
     /**
      * Set the message records content.
      *
-     * @param data - Data content.
+     * @param data
+     *            - Data content.
      * @return Self.
      */
     public Message<M> data(M data) {

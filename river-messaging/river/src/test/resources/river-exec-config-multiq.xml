@@ -107,10 +107,7 @@
                     <param name="subscriber.batch.size" value="1024"/>
                     <param name="subscriber.poll.timeout" value="100"/>
                     <param name="sleep.interval" value="100"/>
-                    <!-- <param name="subscriber.ack.required" value="false"/> -->
-                    <param name="subscriber.ack.required" value="true"/>
-                    <param name="subscriber.ack.cache.size" value="64"/>
-                    <param name="subscriber.ack.timeout" value="60000"/>
+                    <param name="subscriber.ack.required" value="false"/>
                 </params>
                 <executor class="com.wookler.server.river.PooledExecutor" >
                     <params>
@@ -133,14 +130,14 @@
             <params>
                 <param name="file.input"
                        value="src/test/resources/input2"/>
-                <param name="file.cycle" value="2"/>
+                <param name="file.cycle" value="10"/>
             </params>
         </producer>
         <producer name="TEST-PRODUCER-1">
             <params>
                 <param name="file.input"
                        value="src/test/resources/input2"/>
-                <param name="file.cycle" value="2"/>
+                <param name="file.cycle" value="10"/>
             </params>
         </producer>
         <!--producer name="TEST-PRODUCER-2">

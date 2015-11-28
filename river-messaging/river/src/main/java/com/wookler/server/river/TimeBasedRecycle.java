@@ -32,99 +32,96 @@ import com.wookler.server.common.utils.LogUtils;
  * @created 15/08/14
  */
 public class TimeBasedRecycle implements RecycleStrategy {
-	@CParam(name = "recycle.time")
-	private String recyclePeriod;
+    @CParam(name = "recycle.time")
+    private String recyclePeriod;
 
-	private long window;
+    private long window;
 
-	/**
-	 * Check if the specified message block needs to be recycle, based on the
-	 * block creation timestamp.
-	 *
-	 * @param block
-	 *            - Current message block.
-	 * @return - Needs recycle?
-	 */
-	@Override
-	public boolean recycle(MessageBlock block) {
-		return ((System.currentTimeMillis() - block.createtime()) >= window);
-	}
+    /**
+     * Check if the specified message block needs to be recycle, based on the
+     * block creation timestamp.
+     *
+     * @param block
+     *            - Current message block.
+     * @return - Needs recycle?
+     */
+    @Override
+    public boolean recycle(MessageBlock block) {
+        return ((System.currentTimeMillis() - block.createtime()) >= window);
+    }
 
-	/**
-	 * Configure this instance of the recycle strategy.
-	 * <p/>
-	 * 
-	 * <pre>
-	 * {@code
-	 *     <recycle class="com.wookler.server.river.TimeBasedRecycle">
-	 *         <params>
-	 *              <param name="recycle.time" value="[TIME INTERVAL]"/>
-	 *          </params>
-	 *     </recycle>
-	 * }
-	 * </pre>
-	 *
-	 * @param config
-	 *            - Configuration node for this instance.
-	 * @throws ConfigurationException
-	 */
-	@Override
-	public void configure(ConfigNode config) throws ConfigurationException {
-		if (!(config instanceof ConfigPath))
-			throw new ConfigurationException(String.format(
-					"Invalid config node type. [expected:%s][actual:%s]",
-					ConfigPath.class.getCanonicalName(),
-					config.getClass().getCanonicalName()));
-		ConfigUtils.parse(config, this);
-		LogUtils.debug(getClass(), ((ConfigPath) config).path());
-		LogUtils.debug(getClass(),
-				"Using recycle interval = " + recyclePeriod + "]");
-		try {
+    /**
+     * Configure this instance of the recycle strategy.
+     * <p/>
+     * 
+     * <pre>
+     * {@code
+     *     <recycle class="com.wookler.server.river.TimeBasedRecycle">
+     *         <params>
+     *              <param name="recycle.time" value="[TIME INTERVAL]"/>
+     *          </params>
+     *     </recycle>
+     * }
+     * </pre>
+     *
+     * @param config
+     *            - Configuration node for this instance.
+     * @throws ConfigurationException
+     */
+    @Override
+    public void configure(ConfigNode config) throws ConfigurationException {
+        if (!(config instanceof ConfigPath))
+            throw new ConfigurationException(String.format(
+                    "Invalid config node type. [expected:%s][actual:%s]",
+                    ConfigPath.class.getCanonicalName(), config.getClass().getCanonicalName()));
+        ConfigUtils.parse(config, this);
+        LogUtils.debug(getClass(), ((ConfigPath) config).path());
+        LogUtils.debug(getClass(), "Using recycle interval = " + recyclePeriod + "]");
+        try {
 
-			TimeWindow tw = TimeWindow.parse(recyclePeriod);
-			window = tw.period();
+            TimeWindow tw = TimeWindow.parse(recyclePeriod);
+            window = tw.period();
 
-		} catch (TimeWindowException e) {
-			throw new ConfigurationException(
-					"Error initializing recycle strategy.", e);
-		}
-	}
+        } catch (TimeWindowException e) {
+            throw new ConfigurationException("Error initializing recycle strategy.", e);
+        }
+    }
 
-	/**
-	 * NOP function.
-	 */
-	@Override
-	public void dispose() {
-		// Do nothing....
-	}
+    /**
+     * NOP function.
+     */
+    @Override
+    public void dispose() {
+        // Do nothing....
+    }
 
-	/**
-	 * @return the recyclePeriod
-	 */
-	public String getRecyclePeriod() {
-		return recyclePeriod;
-	}
+    /**
+     * @return the recyclePeriod
+     */
+    public String getRecyclePeriod() {
+        return recyclePeriod;
+    }
 
-	/**
-	 * @param recyclePeriod
-	 *            the recyclePeriod to set
-	 */
-	public void setRecyclePeriod(String recyclePeriod) {
-		this.recyclePeriod = recyclePeriod;
-	}
+    /**
+     * @param recyclePeriod
+     *            the recyclePeriod to set
+     */
+    public void setRecyclePeriod(String recyclePeriod) {
+        this.recyclePeriod = recyclePeriod;
+    }
 
-	/**
-	 * @return the window
-	 */
-	public long getWindow() {
-		return window;
-	}
+    /**
+     * @return the window
+     */
+    public long getWindow() {
+        return window;
+    }
 
-	/**
-	 * @param window
-	 *            the window to set
-	 */
-	public void setWindow(long window) {
-		this.window = window;
-	}
+    /**
+     * @param window
+     *            the window to set
+     */
+    public void setWindow(long window) {
+        this.window = window;
+    }
 }

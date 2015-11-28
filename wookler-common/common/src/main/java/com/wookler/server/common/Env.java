@@ -39,229 +39,297 @@ import org.slf4j.LoggerFactory;
  * @created 30/08/14
  */
 public class Env {
-	public static final class Constants {
-		public static final String CONFIG_PATH_ENV = "configuration.env";
+    public static final class Constants {
+        public static final String CONFIG_PATH_ENV = "configuration.env";
 
-		public static final String	CONFIG_PARAM_ENCODING	= "default.encoding";
-		private static final String	DEFAULT_ENCODING		= "UTF-8";
-	}
+        public static final String CONFIG_PARAM_ENCODING = "default.encoding";
+        private static final String DEFAULT_ENCODING = "UTF-8";
+    }
 
-	private static final Logger log = LoggerFactory.getLogger(Env.class);
+    private static final Logger log = LoggerFactory.getLogger(Env.class);
 
-	private TaskManager			taskmanager	= new TaskManager();
-	private Config				config;
-	private Module				module;
-	private SystemStartupLock	startupLock	= new SystemStartupLock();
-	protected ObjectState		state		= new ObjectState();
-	protected ConfigNode		envConfig;
+    /** The taskmanager instance. */
+    private TaskManager taskmanager = new TaskManager();
+    /** The configuration object */
+    private Config config;
+    /** Module instance */
+    private Module module;
+    /**
+     * startup lock -- acquired before calling Env.create() and released after
+     * the system startup work is finished
+     */
+    private SystemStartupLock startupLock = new SystemStartupLock();
+    /** state corresponding to this env */
+    protected ObjectState state = new ObjectState();
+    /** env config node */
+    protected ConfigNode envConfig;
+    /** encoding */
+    private Charset encoding = Charset.forName(Constants.DEFAULT_ENCODING);
 
-	private Charset encoding = Charset.forName(Constants.DEFAULT_ENCODING);
+    /**
+     * Make the constructor private to prevent multiple instance of the Env
+     * being used.
+     */
+    private Env() {
+    }
 
-	/**
-	 * Make the constructor private to prevent multiple instance of the Env
-	 * being used.
-	 */
-	protected Env() {
+    public Charset charset() {
+        return encoding;
+    }
 
-	}
+    /**
+     * @return the module
+     */
+    public Module getModule() {
+        return module;
+    }
 
-	public Charset charset() {
-		return encoding;
-	}
+    /**
+     * @return the envConfig
+     */
+    public ConfigNode getEnvConfig() {
+        return envConfig;
+    }
 
-	/**
-	 * @return the module
-	 */
-	public Module getModule() {
-		return module;
-	}
+    /**
+     * Initialize the environment context.
+     *
+     * @param configf
+     *            - Configuration file path to load the environment from.
+     * @param configp
+     *            - Root XPath expression to load from.
+     * @throws Exception
+     */
+    protected void init(String configf, String configp) throws Exception {
+        try {
+            config = new Config(configf, configp);
+            config.load();
+            envConfig = config.search(Constants.CONFIG_PATH_ENV);
 
-	/**
-	 * @return the envConfig
-	 */
-	public ConfigNode getEnvConfig() {
-		return envConfig;
-	}
+            if (envConfig != null) {
+                try {
+                    ConfigParams params = ConfigUtils.params(envConfig);
+                    String s = params.param(Constants.CONFIG_PARAM_ENCODING);
+                    if (!StringUtils.isEmpty(s)) {
+                        encoding = Charset.forName(s);
+                    }
+                } catch (DataNotFoundException e) {
+                    // Do nothing...
+                }
+                setupModule(envConfig);
 
-	/**
-	 * Initialize the environment context.
-	 *
-	 * @param configf
-	 *            - Configuration file path to load the environment from.
-	 * @param configp
-	 *            - Root XPath expression to load from.
-	 * @throws Exception
-	 */
-	protected void init(String configf, String configp) throws Exception {
-		try {
-			config = new Config(configf, configp);
-			config.load();
-			envConfig = config.search(Constants.CONFIG_PATH_ENV);
+                // Setup and create the Monitor.
+                configMonitor();
+                // Setup and create the task manager.
+                configTaskManager();
+                // Start the monitor thread.
+                Monitor.start();
+            }
+            state.setState(EObjectState.Available);
+        } catch (Exception e) {
+            LogUtils.stacktrace(getClass(), e, log);
+            state.setState(EObjectState.Exception);
+            state.setError(e);
+            throw e;
+        }
+    }
 
-			if (envConfig != null) {
-				try {
-					ConfigParams params = ConfigUtils.params(envConfig);
-					String s = params.param(Constants.CONFIG_PARAM_ENCODING);
-					if (!StringUtils.isEmpty(s)) {
-						encoding = Charset.forName(s);
-					}
-				} catch (DataNotFoundException e) {
-					// Do nothing...
-				}
-				setupModule(envConfig);
-				
-				// Setup and create the Monitor.
-				configMonitor();
-				// Setup and create the task manager.
-				configTaskManager();
-				// Start the monitor thread.
-				Monitor.start();
-			}
-			state.setState(EObjectState.Available);
-		} catch (Exception e) {
-			LogUtils.stacktrace(getClass(), e, log);
-			state.setState(EObjectState.Exception);
-			state.setError(e);
-			throw e;
-		}
-	}
+    /**
+     * Set up the module from the env config node. This consists of parsing the
+     * <module> node within env and getting the module name.This function also
+     * implicitly initializes the ip, hostname and a unique instance id. These
+     * are used while logging the counters and they uniquely identify an
+     * instance.
+     *
+     * @param config
+     *            the
+     * @throws Exception
+     *             the exception
+     */
+    private void setupModule(ConfigNode config) throws Exception {
+        module = new Module();
+        ConfigUtils.parse(config, module);
 
-	private void setupModule(ConfigNode config) throws Exception {
-		module = new Module();
-		ConfigUtils.parse(config, module);
+        module.setInstanceId(UUID.randomUUID().toString());
+        InetAddress ip = NetUtils.getIpAddress();
 
-		module.setInstanceId(UUID.randomUUID().toString());
-		InetAddress ip = NetUtils.getIpAddress();
+        if (ip != null) {
+            module.setHostip(ip.getHostAddress());
+            module.setHostname(ip.getCanonicalHostName());
+        } else {
+            module.setHostip("127.0.0.1");
+            module.setHostname("localhost");
+        }
 
-		if (ip != null) {
-			module.setHostip(ip.getHostAddress());
-			module.setHostname(ip.getCanonicalHostName());
-		} else {
-			module.setHostip("127.0.0.1");
-			module.setHostname("localhost");
-		}
+        module.setStartTime(System.currentTimeMillis());
+    }
 
-		module.setStartTime(System.currentTimeMillis());
-	}
+    /**
+     * Setup and create the application monitor
+     *
+     * @throws Exception
+     *             the exception
+     */
+    private void configMonitor() throws Exception {
+        ConfigNode node = ConfigUtils.getConfigNode(config.node(), Monitor.MonitorConfig.class,
+                getEnvNode(MonitorConfig.class));
+        Monitor.create(node);
+    }
 
-	private void configMonitor() throws Exception {
-		ConfigNode node = ConfigUtils.getConfigNode(config.node(),
-				Monitor.MonitorConfig.class, getEnvNode(MonitorConfig.class));
-		Monitor.create(node);
-	}
+    /**
+     * Configure task manager.
+     *
+     * @throws Exception
+     *             the exception
+     */
+    private void configTaskManager() throws Exception {
+        ConfigNode node = ConfigUtils.getConfigNode(config.node(), TaskManager.class,
+                getEnvNode(TaskManager.class));
+        taskmanager = new TaskManager();
+        taskmanager.configure(node);
+        taskmanager.start();
+    }
 
-	private void configTaskManager() throws Exception {
-		ConfigNode node = ConfigUtils.getConfigNode(config.node(),
-				TaskManager.class, getEnvNode(TaskManager.class));
-		taskmanager = new TaskManager();
-		taskmanager.configure(node);
-		taskmanager.start();
-	}
+    /**
+     * Get the config path corresponding to the specified type and form the env
+     * node to be extracted as env.<path>
+     *
+     * @param type
+     *            from which the config path needs to be extracted
+     * @return the path corresponding to the env node to be extracted.
+     */
+    private String getEnvNode(Class<?> type) {
+        if (type.isAnnotationPresent(CPath.class)) {
+            CPath cp = type.getAnnotation(CPath.class);
+            return String.format("env.%s", cp.path());
+        }
+        return null;
+    }
 
-	private String getEnvNode(Class<?> type) {
-		if (type.isAnnotationPresent(CPath.class)) {
-			CPath cp = type.getAnnotation(CPath.class);
-			return String.format("env.%s", cp.path());
-		}
-		return null;
-	}
+    /**
+     * Dispose the task manager
+     */
+    protected void dispose() {
+        try {
+            if (taskmanager != null)
+                taskmanager.dispose();
 
-	protected void dispose() {
-		try {
-			if (taskmanager != null)
-				taskmanager.dispose();
+            state.setState(EObjectState.Disposed);
+        } catch (Throwable t) {
+            LogUtils.stacktrace(getClass(), t, log);
+            LogUtils.error(getClass(), t, log);
+        }
+    }
 
-			state.setState(EObjectState.Disposed);
-		} catch (Throwable t) {
-			LogUtils.stacktrace(getClass(), t, log);
-			LogUtils.error(getClass(), t, log);
-		}
-	}
+    /**
+     * Get the task manager
+     *
+     * @return the task manager
+     */
+    public TaskManager taskmanager() {
+        return taskmanager;
+    }
 
-	public TaskManager taskmanager() {
-		return taskmanager;
-	}
+    /**
+     * Get the root config element
+     *
+     * @return the config
+     */
+    public Config config() {
+        return config;
+    }
 
-	public Config config() {
-		return config;
-	}
+    /**
+     * Get the setState corresponding to this env
+     *
+     * @return the object setState
+     */
+    public ObjectState state() {
+        return state;
+    }
 
-	public ObjectState state() {
-		return state;
-	}
+    /**
+     * Obtain the {@link SystemStartupLock} by setting its setState to Blocked.
+     */
+    public void startupLock() {
+        startupLock.setState(EBlockingState.Blocked);
+    }
 
-	public void startupLock() {
-		startupLock.setState(EBlockingState.Blocked);
-	}
+    /**
+     * Release the {@link SystemStartupLock} by setting its setState to Finished.
+     */
+    public void startupFinished() {
+        startupLock.setState(EBlockingState.Finished);
+    }
 
-	public void startupFinished() {
-		startupLock.setState(EBlockingState.Finished);
-	}
+    /**
+     * TODO
+     *
+     * @return the blocked on state
+     */
+    public BlockedOnState<EBlockingState> block() {
+        if (startupLock.getState() == EBlockingState.Finished) {
+            return null;
+        }
+        return startupLock.block(new EBlockingState[] { EBlockingState.Finished });
+    }
 
-	public BlockedOnState<EBlockingState> block() {
-		if (startupLock.getState() == EBlockingState.Finished) {
-			return null;
-		}
-		return startupLock
-				.block(new EBlockingState[] { EBlockingState.Finished });
-	}
+    private static Env ENV = new Env();
 
-	private static Env ENV = new Env();
+    /**
+     * Initialize the singleton instance of the environment context. This should
+     * be done at the beginning of the application create.
+     *
+     * @param configf
+     *            - Configuration file path to load the environment from.
+     * @param configp
+     *            - Root XPath expression to load from.
+     * @return - Handle to the singleton instance.
+     * @throws Exception
+     */
+    public static Env create(String configf, String configp) throws Exception {
+        synchronized (ENV) {
+            if (ENV.state.getState() != EObjectState.Available)
+                ENV.init(configf, configp);
+        }
+        return ENV;
+    }
 
-	/**
-	 * Initialize the singleton instance of the environment context. This should
-	 * be done at the beginning of the application create.
-	 *
-	 * @param configf
-	 *            - Configuration file path to load the environment from.
-	 * @param configp
-	 *            - Root XPath expression to load from.
-	 * @return - Handle to the singleton instance.
-	 * @throws Exception
-	 */
-	public static Env create(String configf, String configp) throws Exception {
-		synchronized (ENV) {
-			if (ENV.state.getState() != EObjectState.Available)
-				ENV.init(configf, configp);
-		}
-		return ENV;
-	}
+    /**
+     * Shutdown the singleton context.
+     */
+    public static void shutdown() {
+        ENV.dispose();
+    }
 
-	/**
-	 * Shutdown the singleton context.
-	 */
-	public static void shutdown() {
-		ENV.dispose();
-	}
+    /**
+     * Get the singleton environment context.
+     *
+     * @return - Handle to the singleton instance.
+     */
+    public static Env get() {
+        return ENV;
+    }
 
-	/**
-	 * Get the singleton environment context.
-	 *
-	 * @return - Handle to the singleton instance.
-	 */
-	public static Env get() {
-		return ENV;
-	}
+    /**
+     *
+     * IMPORTANT : This function is explicitly provided only for running tests
+     * and *SHOULD NOT* be used anywhere in the normal execution flow. It is
+     * used to clear the singleton instance, and ensure that a new singleton
+     * instance is created at the beginning of each test. This function is
+     * responsible for terminating all the threads that are started by this
+     * singleton instance. It will reset the existing singleton object to null
+     * and create a fresh instance.
+     * 
+     * @see com.wookler.server.common.TaskManager#shutdown()
+     *
+     */
+    public static void reset() {
+        Env.get().taskmanager.shutdown();
+        // explicitly set to null to show the reset of singleton clearly
+        // (redundant step)
+        ENV = null;
 
-	/**
-	 *
-	 * IMPORTANT : This function is explicitly provided only for running tests
-	 * and *SHOULD NOT* be used anywhere in the normal execution flow. It is
-	 * used to clear the singleton instance, and ensure that a new singleton
-	 * instance is created at the beginning of each test. This function is
-	 * responsible for terminating all the threads that are started by this
-	 * singleton instance. It will reset the existing singleton object to null
-	 * and create a fresh instance.
-	 * 
-	 * @see com.wookler.server.common.TaskManager#shutdown()
-	 *
-	 */
-	public static void reset() {
-		Env.get().taskmanager.shutdown();
-		// explicitly set to null to show the reset of singleton clearly
-		// (redundant step)
-		ENV = null;
-
-		ENV = new Env();
-	}
+        ENV = new Env();
+    }
 }

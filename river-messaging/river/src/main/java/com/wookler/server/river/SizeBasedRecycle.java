@@ -32,68 +32,66 @@ import com.wookler.server.common.utils.LogUtils;
  */
 public class SizeBasedRecycle implements RecycleStrategy {
 
-	@CParam(name = "recycle.size")
-	private String		sizeValue;
-	private DataSize	size;
+    @CParam(name = "recycle.size")
+    private String sizeValue;
+    private DataSize size;
 
-	@Override
-	public boolean recycle(MessageBlock block) {
-		if (size.getValue() <= block.size()) {
-			LogUtils.debug(getClass(), "Block recycle needed.[size="
-					+ block.size() + "][id=" + block.id() + "]");
-			return true;
-		}
-		return false;
-	}
+    @Override
+    public boolean recycle(MessageBlock block) {
+        if (size.getValue() <= block.size()) {
+            LogUtils.debug(getClass(), "Block recycle needed.[size=" + block.size() + "][id="
+                    + block.id() + "]");
+            return true;
+        }
+        return false;
+    }
 
-	@Override
-	public void configure(ConfigNode config) throws ConfigurationException {
-		if (!(config instanceof ConfigPath))
-			throw new ConfigurationException(String.format(
-					"Invalid config node type. [expected:%s][actual:%s]",
-					ConfigPath.class.getCanonicalName(),
-					config.getClass().getCanonicalName()));
-		ConfigUtils.parse(config, this);
-		size = DataSize.parse(sizeValue);
+    @Override
+    public void configure(ConfigNode config) throws ConfigurationException {
+        if (!(config instanceof ConfigPath))
+            throw new ConfigurationException(String.format(
+                    "Invalid config node type. [expected:%s][actual:%s]",
+                    ConfigPath.class.getCanonicalName(), config.getClass().getCanonicalName()));
+        ConfigUtils.parse(config, this);
+        size = DataSize.parse(sizeValue);
 
-		LogUtils.debug(getClass(), ((ConfigPath) config).path());
-		LogUtils.debug(getClass(),
-				"Using message block recycle size = " + size + ".");
-	}
+        LogUtils.debug(getClass(), ((ConfigPath) config).path());
+        LogUtils.debug(getClass(), "Using message block recycle size = " + size + ".");
+    }
 
-	@Override
-	public void dispose() {
-		// Do nothing...
-	}
+    @Override
+    public void dispose() {
+        // Do nothing...
+    }
 
-	/**
-	 * @return the size
-	 */
-	public DataSize getSize() {
-		return size;
-	}
+    /**
+     * @return the size
+     */
+    public DataSize getSize() {
+        return size;
+    }
 
-	/**
-	 * @param size
-	 *            the size to set
-	 */
-	public void setSize(DataSize size) {
-		this.size = size;
-	}
+    /**
+     * @param size
+     *            the size to set
+     */
+    public void setSize(DataSize size) {
+        this.size = size;
+    }
 
-	/**
-	 * @return the sizeValue
-	 */
-	public String getSizeValue() {
-		return sizeValue;
-	}
+    /**
+     * @return the sizeValue
+     */
+    public String getSizeValue() {
+        return sizeValue;
+    }
 
-	/**
-	 * @param sizeValue
-	 *            the sizeValue to set
-	 */
-	public void setSizeValue(String sizeValue) {
-		this.sizeValue = sizeValue;
+    /**
+     * @param sizeValue
+     *            the sizeValue to set
+     */
+    public void setSizeValue(String sizeValue) {
+        this.sizeValue = sizeValue;
 
-	}
+    }
 }

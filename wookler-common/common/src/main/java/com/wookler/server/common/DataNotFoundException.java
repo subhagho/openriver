@@ -27,10 +27,25 @@ package com.wookler.server.common;
 public class DataNotFoundException extends Exception {
     private static final String _PREFIX_ = "No Data Found : ";
 
+    /**
+     * Instantiates a new data not found exception with the exception message
+     *
+     * @param mesg
+     *            the exception mesg
+     */
     public DataNotFoundException(String mesg) {
         super(_PREFIX_ + mesg);
     }
 
+    /**
+     * Instantiates a new data not found exception with the exception message
+     * and cause
+     *
+     * @param mesg
+     *            the exception mesg
+     * @param inner
+     *            the exception cause
+     */
     public DataNotFoundException(String mesg, Throwable inner) {
         super(_PREFIX_ + mesg, inner);
     }

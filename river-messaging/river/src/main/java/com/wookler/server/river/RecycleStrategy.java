@@ -28,7 +28,7 @@ import com.wookler.server.common.config.CPath;
 @CPath(path = "recycle")
 public interface RecycleStrategy extends Configurable {
 	/**
-	 * Check if the current block needs to be recycled.
+	 * Check if the current {@link MessageBlock} needs to be recycled.
 	 *
 	 * @param block
 	 *            - Current message block.

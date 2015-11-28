@@ -18,7 +18,7 @@
 package com.wookler.server.common;
 
 /**
- * Enum corresponding to whether the state is unknown, blocked or finished
+ * Enum representing blockingState. state corresponds to unknown, blocked or finished
  *
  * @author subghosh
  * @created May 12, 2015:2:54:13 PM

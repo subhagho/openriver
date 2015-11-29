@@ -60,38 +60,73 @@ public class ReadResponse {
         OK
     }
 
+    /** ReadResponse status */
     private EReadResponseStatus status = EReadResponseStatus.Unknown;
+    /** Message Record that is read */
     private List<Record> data;
 
+    /**
+     * Set the status of the ReadResponse
+     *
+     * @param status
+     *            the status to set
+     * @return self
+     */
     public ReadResponse status(EReadResponseStatus status) {
         this.status = status;
 
         return this;
     }
 
+    /**
+     * Get the status of this response
+     *
+     * @return the status
+     */
     public EReadResponseStatus status() {
         return status;
     }
 
+    /**
+     * Get the list of message {@link Record} in the response
+     *
+     * @return the list of message {@link Record}
+     */
     public List<Record> data() {
         return data;
     }
 
+    /**
+     * Set the list of message {@link Record} in the response
+     *
+     * @param data
+     *            message {@link Record} list to set
+     * @return self
+     */
     public ReadResponse data(List<Record> data) {
         this.data = data;
 
         return this;
     }
 
+    /**
+     * Adds a list of message {@link Record} to the existing list in the
+     * response. If nothing is present, then a new list is created and all the
+     * passed records are added.
+     *
+     * @param records
+     *            the {@link Record} list to add
+     * @return self
+     */
     public ReadResponse add(List<Record> records) {
         if (data == null)
             data = new ArrayList<Record>();
 
         if (records != null && !records.isEmpty()) {
-            for(Record r : records) {
+            for (Record r : records) {
                 data.add(r.copy());
             }
         }
-        return null;
+        return this;
     }
 }

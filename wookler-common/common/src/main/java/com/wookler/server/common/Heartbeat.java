@@ -20,13 +20,17 @@ package com.wookler.server.common;
 
 /**
  * Base class for representing thread/process heartbeats for monitoring.
+ * Consists of thread id, thread name and {@link Thread.State}
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 06/08/14
  */
 public class Heartbeat {
+    /** thread id */
     private long id;
+    /** thread name */
     private String name;
+    /** thread state */
     private Thread.State state;
 
     /**
@@ -41,7 +45,8 @@ public class Heartbeat {
     /**
      * Set the name of the thread/process.
      *
-     * @param name - Thread/Process name.
+     * @param name
+     *            - Thread/Process name.
      * @return - self.
      */
     public Heartbeat name(String name) {
@@ -61,7 +66,8 @@ public class Heartbeat {
     /**
      * Set the thread/process ID.
      *
-     * @param id - Thread/Process ID.
+     * @param id
+     *            - Thread/Process ID.
      * @return - self
      */
     public Heartbeat id(long id) {
@@ -72,7 +78,8 @@ public class Heartbeat {
     /**
      * Set the thread/process setState.
      *
-     * @param state - Thread/Process setState.
+     * @param state
+     *            - Thread/Process setState.
      * @return - self.
      */
     public Heartbeat state(Thread.State state) {

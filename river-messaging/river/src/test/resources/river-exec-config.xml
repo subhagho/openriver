@@ -21,7 +21,6 @@
         <module name="TEST_RIVER_EXEC" />
         <monitor>
             <params>
-                <param name="app.name" value="TEST-RIVER"/>
                 <param name="monitor.window.recycle" value="10ss"/>
                 <param name="monitor.frequency.write" value="1mm"/>
             </params>

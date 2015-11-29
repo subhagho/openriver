@@ -22,19 +22,24 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 
 /**
- * Class represent an executing thread instance.
+ * Extends {@link Heartbeat} class to represent an executing thread instance.
+ * Additionally consists of blocked time, wait time, cpu timr and user time.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 19/08/14
  */
 public class HeartbeatLive extends Heartbeat {
+    /** blocked time for the thread */
     private long blockedt;
+    /** wait time for the thread */
     private long waitedt;
+    /** cpu time for the thread */
     private long cputime;
+    /** user time for the thread */
     private long usertime;
 
     /**
-     * Return the thread blocked time.
+     * Return the thread blocked time in ms
      *
      * @return - Blocked time, or -1 if not supported.
      */
@@ -43,7 +48,7 @@ public class HeartbeatLive extends Heartbeat {
     }
 
     /**
-     * Return the thread wait time.
+     * Return the thread wait time in ms
      *
      * @return - Wait time, or -1 if not supported.
      */
@@ -52,18 +57,18 @@ public class HeartbeatLive extends Heartbeat {
     }
 
     /**
-     * Return the thread CPU usage time.
+     * Return the thread CPU usage time in ms
      *
-     * @return - CPU Usage.
+     * @return - CPU Usage or -0.001 if not supported
      */
     public long cputime() {
         return cputime;
     }
 
     /**
-     * Return the thread User CPU time.
+     * Return the thread User CPU time in ms
      *
-     * @return - User CPU time.
+     * @return - User CPU time or -0.001 if not supported
      */
     public long usertime() {
         return usertime;
@@ -72,8 +77,10 @@ public class HeartbeatLive extends Heartbeat {
     /**
      * Setup this instance based on the thread info specified.
      *
-     * @param info         - Thread information.
-     * @param threadMXBean - Management bean handle.
+     * @param info
+     *            - Thread information.
+     * @param threadMXBean
+     *            - Management bean handle.
      * @return - self.
      */
     public HeartbeatLive set(ThreadInfo info, ThreadMXBean threadMXBean) {
@@ -95,9 +102,10 @@ public class HeartbeatLive extends Heartbeat {
     @Override
     public String toString() {
         if (waitedt >= 0)
-            return String.format("{%s WAITTIME=%d, BLOCKEDTIME=%d, CPUTIME=%d, USERTIME=%d}", super.toString(), waitedt,
-                                        blockedt, cputime, usertime);
+            return String.format("{%s WAITTIME=%d, BLOCKEDTIME=%d, CPUTIME=%d, USERTIME=%d}",
+                    super.toString(), waitedt, blockedt, cputime, usertime);
         else
-            return String.format("{%s CPUTIME=%d, USERTIME=%d}", super.toString(), cputime, usertime);
+            return String.format("{%s CPUTIME=%d, USERTIME=%d}", super.toString(), cputime,
+                    usertime);
     }
 }

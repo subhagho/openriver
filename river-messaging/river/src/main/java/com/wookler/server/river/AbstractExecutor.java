@@ -28,142 +28,141 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Instances of executors are invoked to process messages once dequeued.
+ * Instances of executors are invoked to process messages once dequeued. The
+ * executor's run method is responsible for invoking the configured
+ * {@link Processor} on the message batch.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14
  */
 @CPath(path = "executor")
 public abstract class AbstractExecutor<M> implements Configurable, Runnable {
-	protected List<Processor<M>>		processors	= new ArrayList<Processor<M>>();
-	protected ProcessState				state		= new ProcessState();
-	protected ReentrantReadWriteLock	lock		= new ReentrantReadWriteLock();
-	protected long						sleeptime	= 100;
-	protected String					name;
-	protected int						batchSize;
-	protected long						queueTimeout;
+    protected List<Processor<M>> processors = new ArrayList<Processor<M>>();
+    protected ProcessState state = new ProcessState();
+    protected ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    protected long sleeptime = 100;
+    protected String name;
+    protected int batchSize;
+    protected long queueTimeout;
 
-	private Subscriber<M> subscriber;
+    private Subscriber<M> subscriber;
 
-	public AbstractExecutor<M> batchSize(int batchSize) {
-		this.batchSize = batchSize;
+    public AbstractExecutor<M> batchSize(int batchSize) {
+        this.batchSize = batchSize;
 
-		return this;
-	}
+        return this;
+    }
 
-	public int batchSize() {
-		return batchSize;
-	}
+    public int batchSize() {
+        return batchSize;
+    }
 
-	public AbstractExecutor<M> queueTimeout(long queueTimeout) {
-		this.queueTimeout = queueTimeout;
+    public AbstractExecutor<M> queueTimeout(long queueTimeout) {
+        this.queueTimeout = queueTimeout;
 
-		return this;
-	}
+        return this;
+    }
 
-	public long queueTimeout() {
-		return this.queueTimeout;
-	}
+    public long queueTimeout() {
+        return this.queueTimeout;
+    }
 
-	public AbstractExecutor<M> name(String name) {
-		this.name = name;
+    public AbstractExecutor<M> name(String name) {
+        this.name = name;
 
-		return this;
-	}
+        return this;
+    }
 
-	public String name() {
-		return this.name;
-	}
+    public String name() {
+        return this.name;
+    }
 
-	/**
-	 * Set the subscriber name for this Executor.
-	 *
-	 * @param subscriber
-	 *            - Subscriber name.
-	 * @return - Self.
-	 */
-	public AbstractExecutor<?> subscriber(Subscriber<M> subscriber) {
-		this.subscriber = subscriber;
+    /**
+     * Set the subscriber name for this Executor.
+     *
+     * @param subscriber
+     *            - Subscriber name.
+     * @return - Self.
+     */
+    public AbstractExecutor<?> subscriber(Subscriber<M> subscriber) {
+        this.subscriber = subscriber;
 
-		return this;
-	}
+        return this;
+    }
 
-	/**
-	 * Get the subscriber name for this Executor.
-	 *
-	 * @return - Subscriber name.
-	 */
-	public Subscriber<M> subscriber() {
-		return subscriber;
-	}
+    /**
+     * Get the subscriber name for this Executor.
+     *
+     * @return - Subscriber name.
+     */
+    public Subscriber<M> subscriber() {
+        return subscriber;
+    }
 
-	/**
-	 * Add a new message processor to this executor.
-	 *
-	 * @param processor
-	 *            - Message processor implementation.
-	 * @return - Self.
-	 */
-	public AbstractExecutor<?> processor(Processor<M> processor) {
-		processors.add(processor);
-		return this;
-	}
+    /**
+     * Add a new message processor to this executor.
+     *
+     * @param processor
+     *            - Message processor implementation.
+     * @return - Self.
+     */
+    public AbstractExecutor<?> processor(Processor<M> processor) {
+        processors.add(processor);
+        return this;
+    }
 
-	/**
-	 * Utility function to set the getError setState.
-	 *
-	 * @param t
-	 *            - Exception cause.
-	 */
-	protected void exception(Throwable t) {
-		state.setState(EProcessState.Exception).setError(t);
-	}
+    /**
+     * Utility function to set the getError setState.
+     *
+     * @param t
+     *            - Exception cause.
+     */
+    protected void exception(Throwable t) {
+        state.setState(EProcessState.Exception).setError(t);
+    }
 
-	/**
-	 * Utility function to handle error logging.
-	 *
-	 * @param p
-	 *            - Processor causing the error.
-	 * @param response
-	 *            - Processor responce code.
-	 * @param log
-	 *            - Logger handle.
-	 */
-	protected void loge(Processor<M> p, ProcessResponse<M> response, Logger log) {
-		if (response.response() != EProcessResponse.Success && p != null
-				&& log != null) {
-			log.error(String.format(
-					"Processor failed [$s:%s][response=%s][error=%s]",
-					p.getClass().getCanonicalName(), p.name(),
-					response.response().name(),
-					response.error().getLocalizedMessage()));
-		}
-	}
+    /**
+     * Utility function to handle error logging.
+     *
+     * @param p
+     *            - Processor causing the error.
+     * @param response
+     *            - Processor responce code.
+     * @param log
+     *            - Logger handle.
+     */
+    protected void loge(Processor<M> p, ProcessResponse<M> response, Logger log) {
+        if (response.response() != EProcessResponse.Success && p != null && log != null) {
+            log.error(String.format("Processor failed [$s:%s][response=%s][error=%s]", p.getClass()
+                    .getCanonicalName(), p.name(), response.response().name(), response.error()
+                    .getLocalizedMessage()));
+        }
+    }
 
-	/**
-	 * Find a registered processor by specified id.
-	 *
-	 * @param id
-	 *            - Processor ID
-	 * @return - Processor handle or NULL if not found.
-	 */
-	protected Processor<M> find(String id) {
-		if (processors != null && !processors.isEmpty()) {
-			for (Processor<M> p : processors) {
-				if (p.id().compareTo(id) == 0) {
-					return p;
-				}
-			}
-		}
-		return null;
-	}
+    /**
+     * Find a registered processor by specified id.
+     *
+     * @param id
+     *            - Processor ID
+     * @return - Processor handle or NULL if not found.
+     */
+    protected Processor<M> find(String id) {
+        if (processors != null && !processors.isEmpty()) {
+            for (Processor<M> p : processors) {
+                if (p.id().compareTo(id) == 0) {
+                    return p;
+                }
+            }
+        }
+        return null;
+    }
 
-	/**
-	 * Start the executor processor.
-	 * 
-	 * @throws ProcessingException
-	 */
-	public abstract void start() throws ProcessingException;
+    /**
+     * Start the executor processor.
+     * 
+     * @throws ProcessingException
+     */
+    public abstract void start() throws ProcessingException;
 
-	public abstract void check() throws ProcessingException;
+    public abstract void check() throws ProcessingException;
 }

@@ -19,8 +19,9 @@
 package com.wookler.server.river;
 
 /**
- * Error type escalated by the Processors. If the processor is marked as ignore getError (default) these errors will
- * just be logged. Else the processor chain will be terminated. Even the subscriber execution loop will terminate upon this exception
+ * Error type escalated by the Processors.The processor chain will be
+ * terminated. Even the subscriber execution loop will terminate upon this
+ * exception
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14
@@ -29,10 +30,25 @@ package com.wookler.server.river;
 public class ProcessingException extends Exception {
     private static final String _PREFIX_ = "Processing Exception : ";
 
+    /**
+     * Instantiates a new processing exception with exception message
+     *
+     * @param mesg
+     *            the exception mesg
+     */
     public ProcessingException(String mesg) {
         super(_PREFIX_ + mesg);
     }
 
+    /**
+     * Instantiates a new processing exception with exception message and
+     * exception cause
+     *
+     * @param mesg
+     *            the exception mesg
+     * @param inner
+     *            the exception cause
+     */
     public ProcessingException(String mesg, Throwable inner) {
         super(_PREFIX_ + mesg, inner);
     }

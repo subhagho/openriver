@@ -18,7 +18,6 @@
 
 package com.wookler.server.common;
 
-
 import java.util.UUID;
 
 import static com.wookler.server.common.utils.LogUtils.debug;
@@ -30,27 +29,39 @@ import static com.wookler.server.common.utils.LogUtils.debug;
  * @created 04/08/14
  */
 public abstract class AbstractCounter implements Comparable<AbstractCounter> {
+    /** Enum indicating the counter mode based on the log level */
     public static enum Mode {
         DEBUG, PROD
     }
 
+    /** counter namespace */
     protected String namespace;
+    /** counter name */
     protected String name;
+    /** unique id */
     protected String id;
+    /** type of counter based on measure (Averge or Count) */
     protected Class<? extends AbstractMeasure> type;
+    /** default counter logging mode */
     protected Mode mode = Mode.DEBUG;
+    /** time window def */
     protected TimeWindow windowdef;
+    /** time window */
     protected long window;
-
+    /** total counter measure since application start */
     protected AbstractMeasure total;
+    /** counter measure for the defined window period */
     protected AbstractMeasure period;
+    /** delta counter measure */
     protected AbstractMeasure delta;
 
     /**
      * Create a new instance of a counter with the specified measure type.
      *
-     * @param windowdef - Time Window for recycle.
-     * @param type      - Measure Type.
+     * @param windowdef
+     *            - Time Window for recycle.
+     * @param type
+     *            - Measure Type (Average or Count).
      */
     protected AbstractCounter(TimeWindow windowdef, Class<? extends AbstractMeasure> type) {
         try {
@@ -73,10 +84,11 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     }
 
     /**
-     * Set the counter mode. (PROD/DEBUG)
-     * The mode defines whether the counter is captured only when DEBUG mode is enabled for logging.
+     * Set the counter mode. (PROD/DEBUG) The mode defines whether the counter
+     * is captured only when DEBUG mode is enabled for logging.
      *
-     * @param mode - Counter mode.
+     * @param mode
+     *            - Counter mode.
      * @return - self.
      */
     public AbstractCounter mode(Mode mode) {
@@ -86,7 +98,8 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     }
 
     /**
-     * Get the namespace of this counter. Namespaces are used to group counters into logical units.
+     * Get the namespace of this counter. Namespaces are used to group counters
+     * into logical units.
      *
      * @return - Counter namespace.
      */
@@ -95,9 +108,11 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     }
 
     /**
-     * Set the namespace of this counter. Namespaces are used to group counters into logical units.
+     * Set the namespace of this counter. Namespaces are used to group counters
+     * into logical units.
      *
-     * @param namespace - Counter namespace.
+     * @param namespace
+     *            - Counter namespace.
      * @return - self.
      */
     public AbstractCounter namespace(String namespace) {
@@ -116,9 +131,11 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     }
 
     /**
-     * Set the counter name. Counter names are expected to be unique within a namespace.
+     * Set the counter name. Counter names are expected to be unique within a
+     * namespace.
      *
-     * @param name - Counter name.
+     * @param name
+     *            - Counter name.
      * @return - self.
      */
     public AbstractCounter name(String name) {
@@ -153,7 +170,8 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     @Override
     public String toString() {
         StringBuffer buff = new StringBuffer();
-        buff.append(String.format("{[%s] %s.%s : [", type.getSimpleName().toUpperCase(), namespace, name));
+        buff.append(String.format("{[%s] %s.%s : [", type.getSimpleName().toUpperCase(), namespace,
+                name));
         buff.append(String.format("[DELTA: %s]", delta.toString()));
         buff.append(String.format("[PERIOD: %s]", period.toString()));
         buff.append(String.format("[TOTAL: %s]", total.toString()));
@@ -163,7 +181,8 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     }
 
     /**
-     * Get the Total counter value. Total value represents the cumulative since the counter started.
+     * Get the Total counter value. Total value represents the cumulative since
+     * the counter started.
      *
      * @return - Measure total.
      */
@@ -184,8 +203,9 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     }
 
     /**
-     * Get the current period counter value. Period value represents the cumulative for the current period. Periods are
-     * defined using the configured recycle time window.
+     * Get the current period counter value. Period value represents the
+     * cumulative for the current period. Periods are defined using the
+     * configured recycle time window.
      *
      * @return - Period measure.
      */
@@ -205,17 +225,18 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     }
 
     /**
-     * Get the unread delta counter value. Deltas are incremental values computed since the last read with the clear
-     * flag.
+     * Get the unread delta counter value. Deltas are incremental values
+     * computed since the last read with the clear flag.
      *
-     * @param clear - Clear the delta value?
+     * @param clear
+     *            - Clear the delta value?
      * @return - Delta measure
      */
     public AbstractMeasure delta(boolean clear) {
         try {
             AbstractMeasure d = delta;
             if (clear) {
-                if (isPeriodExpried()) {
+                if (isPeriodExpired()) {
                     total.add(period);
                     period.clear();
                     period.window(windowdef.windowStart(System.currentTimeMillis()));
@@ -233,7 +254,13 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
         }
     }
 
-    private boolean isPeriodExpried() {
+    /**
+     * Check if the period has expired i.e. the window does not fall into the
+     * window corresppnding to current time
+     *
+     * @return has period expired?
+     */
+    private boolean isPeriodExpired() {
         try {
             if (window != windowdef.windowStart(System.currentTimeMillis())) {
                 window = windowdef.windowStart(System.currentTimeMillis());
@@ -246,6 +273,14 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
         return false;
     }
 
+    /**
+     * Merge the specified counter with the current counter by updating the
+     * measures
+     *
+     * @param c
+     *            the counter from which the measures need to be merged to this
+     *            counter object
+     */
     public void merge(AbstractCounter c) {
         this.delta.add(c.delta);
         this.period.add(c.period);
@@ -255,7 +290,8 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     /**
      * Comparison function to sort counters based on namespaces.
      *
-     * @param o - Target counter.
+     * @param o
+     *            - Target counter.
      * @return - Compare result.
      */
     @Override
@@ -282,8 +318,10 @@ public abstract class AbstractCounter implements Comparable<AbstractCounter> {
     /**
      * Utility function to get the key used for Hashing this counter instance.
      *
-     * @param namespace - Counter namespace.
-     * @param name      - Counter name.
+     * @param namespace
+     *            - Counter namespace.
+     * @param name
+     *            - Counter name.
      * @return - String key for Hashing.
      */
     public static String getKey(String namespace, String name) {

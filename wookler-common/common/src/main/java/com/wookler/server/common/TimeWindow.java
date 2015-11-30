@@ -25,8 +25,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Class represent a time window definition. Definition includes a Granularity (MILLI, SEC., MIN, etc.) and resolution
- * (multiplier for this granularity).
+ * Class represent a time window definition. Definition includes a Granularity
+ * (MILLI, SEC., MIN, etc.) and resolution (multiplier for this granularity).
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 02/08/14
@@ -48,7 +48,8 @@ public class TimeWindow {
     /**
      * Set the Time Unit granularity for this Time Window.
      *
-     * @param granularity - Time Unit granularity
+     * @param granularity
+     *            - Time Unit granularity
      * @return - seld.
      */
     public TimeWindow granularity(TimeUnit granularity) {
@@ -61,8 +62,8 @@ public class TimeWindow {
     }
 
     /**
-     * Get the resolution for this Time Window. Resolution is the multiplier used to multiply the Tine Unit to get the
-     * actual window delta.
+     * Get the resolution for this Time Window. Resolution is the multiplier
+     * used to multiply the Tine Unit to get the actual window delta.
      *
      * @return - Resolution factor.
      */
@@ -71,10 +72,11 @@ public class TimeWindow {
     }
 
     /**
-     * Set the resolution for this Time Window. Resolution is the multiplier used to multiply the Tine Unit to get the
-     * actual window delta.
+     * Set the resolution for this Time Window. Resolution is the multiplier
+     * used to multiply the Tine Unit to get the actual window delta.
      *
-     * @param resolution - Multiplier resolution.
+     * @param resolution
+     *            - Multiplier resolution.
      * @return - self.
      */
     public TimeWindow resolution(int resolution) {
@@ -89,7 +91,8 @@ public class TimeWindow {
     /**
      * Get the time window the specified timestamp falls into.
      *
-     * @param timestamp - Input timestamp.
+     * @param timestamp
+     *            - Input timestamp.
      * @return - Time window represented as the milliseconds value.
      * @throws TimeWindowException
      */
@@ -98,9 +101,11 @@ public class TimeWindow {
     }
 
     /**
-     * Get the create and end timestamps for the window the specified timestamp falls in.
+     * Get the create and end timestamps for the window the specified timestamp
+     * falls in.
      *
-     * @param timestamp - Input timestamp.
+     * @param timestamp
+     *            - Input timestamp.
      * @return - Long array[2] : array[1]=create time, array[2]=end time.
      * @throws TimeWindowException
      */
@@ -114,9 +119,11 @@ public class TimeWindow {
     }
 
     /**
-     * Get the interval between the specified timestamp and the window end timestamp.
+     * Get the interval between the specified timestamp and the window end
+     * timestamp.
      *
-     * @param timestamp - Input timestamp.
+     * @param timestamp
+     *            - Input timestamp.
      * @return - Long delta.
      * @throws TimeWindowException
      */
@@ -143,30 +150,31 @@ public class TimeWindow {
      */
     @Override
     public String toString() {
-        return String.format("TIME WINDOW: [GRANULARITY:%s][RESOLUTION:%d]", granularity.name(), resolution);
+        return String.format("TIME WINDOW: [GRANULARITY:%s][RESOLUTION:%d]", granularity.name(),
+                resolution);
     }
 
     private long div() throws TimeWindowException {
         if (div < 0) {
             switch (granularity) {
-                case MILLISECONDS:
-                    div = 1;
-                    break;
-                case SECONDS:
-                    div = 1000;
-                    break;
-                case MINUTES:
-                    div = 1000 * 60;
-                    break;
-                case HOURS:
-                    div = 1000 * 60 * 60;
-                    break;
-                case DAYS:
-                    div = 1000 * 60 * 60 * 24;
-                    break;
-                default:
-                    throw new TimeWindowException("Granularity not supported. [granularity = " + granularity.name() +
-                                                          "]");
+            case MILLISECONDS:
+                div = 1;
+                break;
+            case SECONDS:
+                div = 1000;
+                break;
+            case MINUTES:
+                div = 1000 * 60;
+                break;
+            case HOURS:
+                div = 1000 * 60 * 60;
+                break;
+            case DAYS:
+                div = 1000 * 60 * 60 * 24;
+                break;
+            default:
+                throw new TimeWindowException("Granularity not supported. [granularity = "
+                        + granularity.name() + "]");
             }
             div *= resolution;
         }
@@ -174,17 +182,12 @@ public class TimeWindow {
     }
 
     /**
-     * Parse the passed string as Time window.
-     * Time Window formats:
-     * [VALUE][UNIT]
-     * UNITS:
-     * - ms : milliseconds
-     * - ss : seconds
-     * - mm : minutes
-     * - hh : hours
-     * - dd : days
+     * Parse the passed string as Time window. Time Window formats:
+     * [VALUE][UNIT] UNITS: - ms : milliseconds - ss : seconds - mm : minutes -
+     * hh : hours - dd : days
      *
-     * @param unit - Time Window string
+     * @param unit
+     *            - Time Window string
      * @return - Parsed time window.
      * @throws TimeWindowException
      */
@@ -209,6 +212,15 @@ public class TimeWindow {
         throw new TimeWindowException("Cannot parse Time Window from String. [string=" + unit + "]");
     }
 
+    /**
+     * Get {@link TimeUnit} corresponding to the specified string
+     *
+     * @param s
+     *            the string for which TimeUnit needs to be returned
+     * @return the {@link TimeUnit} instance
+     * @throws TimeWindowException
+     *             the time window exception
+     */
     private static TimeUnit timeunit(String s) throws TimeWindowException {
         if (s.compareTo("MS") == 0) {
             return TimeUnit.MILLISECONDS;

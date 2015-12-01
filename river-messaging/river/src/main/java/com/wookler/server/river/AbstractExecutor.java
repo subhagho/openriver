@@ -37,48 +37,91 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @CPath(path = "executor")
 public abstract class AbstractExecutor<M> implements Configurable, Runnable {
+    /** List of configured processors */
     protected List<Processor<M>> processors = new ArrayList<Processor<M>>();
+    /** Executor process state */
     protected ProcessState state = new ProcessState();
+    /** Executor read write lock */
     protected ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    /** default executor thread sleep time */
     protected long sleeptime = 100;
+    /** executor name (same as subscriber name) */
     protected String name;
+    /** message batch size */
     protected int batchSize;
+    /** queue read timeout */
     protected long queueTimeout;
-
+    /** subscriber associated with this executor */
     private Subscriber<M> subscriber;
 
+    /**
+     * Set the message batch size
+     *
+     * @param batchSize
+     *            the batch size to set
+     * @return self
+     */
     public AbstractExecutor<M> batchSize(int batchSize) {
         this.batchSize = batchSize;
 
         return this;
     }
 
+    /**
+     * Return batch size.
+     *
+     * @return the batchSize
+     */
     public int batchSize() {
         return batchSize;
     }
 
+    /**
+     * Set the Queue timeout.
+     *
+     * @param queueTimeout
+     *            the queue timeout to set
+     * @return self
+     */
     public AbstractExecutor<M> queueTimeout(long queueTimeout) {
         this.queueTimeout = queueTimeout;
 
         return this;
     }
 
+    /**
+     * Get the Queue timeout.
+     *
+     * @return the queueTimeout
+     */
     public long queueTimeout() {
         return this.queueTimeout;
     }
 
+    /**
+     * Set the name of this executor (same as Subscriber name)
+     *
+     * @param name
+     *            executor name
+     * @return self
+     */
     public AbstractExecutor<M> name(String name) {
         this.name = name;
 
         return this;
     }
 
+    /**
+     * Get the executor name.
+     *
+     * @return the executor name
+     */
     public String name() {
         return this.name;
     }
 
     /**
-     * Set the subscriber name for this Executor.
+     * Set the subscriber for this Executor.
      *
      * @param subscriber
      *            - Subscriber name.
@@ -91,7 +134,7 @@ public abstract class AbstractExecutor<M> implements Configurable, Runnable {
     }
 
     /**
-     * Get the subscriber name for this Executor.
+     * Get the subscriber for this Executor.
      *
      * @return - Subscriber name.
      */
@@ -100,10 +143,10 @@ public abstract class AbstractExecutor<M> implements Configurable, Runnable {
     }
 
     /**
-     * Add a new message processor to this executor.
+     * Add a new {@link Processor} implementation to this executor.
      *
      * @param processor
-     *            - Message processor implementation.
+     *            - {@link Processor} implementation.
      * @return - Self.
      */
     public AbstractExecutor<?> processor(Processor<M> processor) {
@@ -127,7 +170,7 @@ public abstract class AbstractExecutor<M> implements Configurable, Runnable {
      * @param p
      *            - Processor causing the error.
      * @param response
-     *            - Processor responce code.
+     *            - Processor response code.
      * @param log
      *            - Logger handle.
      */
@@ -140,7 +183,7 @@ public abstract class AbstractExecutor<M> implements Configurable, Runnable {
     }
 
     /**
-     * Find a registered processor by specified id.
+     * Find a registered {@link Processor} by specified id.
      *
      * @param id
      *            - Processor ID
@@ -164,5 +207,11 @@ public abstract class AbstractExecutor<M> implements Configurable, Runnable {
      */
     public abstract void start() throws ProcessingException;
 
+    /**
+     * Check the executor status
+     *
+     * @throws ProcessingException
+     *             the processing exception
+     */
     public abstract void check() throws ProcessingException;
 }

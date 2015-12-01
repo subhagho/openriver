@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO: Auto-generated Javadoc
 /**
  * Pooled Executor executes each registered {@link Processor} in a serial
  * manner, using a thread pool of pre-configured size. Pooled Executors are

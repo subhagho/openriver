@@ -24,21 +24,24 @@ import static com.wookler.server.common.utils.LogUtils.debug;
 import static com.wookler.server.common.utils.LogUtils.error;
 
 /**
- * Helper class to encapsulate all monitoring calls. The reason these calls are encapsulated is to avoid runtime
- * exceptions. Monitoring is expected to ignore exceptions and just log them to STDERR. If exceptions are not to be
- * ignored, calls to the Monitor class can be made directly.
+ * Helper class to encapsulate all monitoring calls. The reason these calls are
+ * encapsulated is to avoid runtime exceptions. Monitoring is expected to ignore
+ * exceptions and just log them to STDERR. If exceptions are not to be ignored,
+ * calls to the Monitor class can be made directly.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 08/08/14
  */
 public class Monitoring {
     /**
-     * Add a Global Counter. Global counters are expected to be of type concurrent counters which are thread safe.
+     * Add a Global Counter. Global counters are expected to be of type
+     * concurrent counters which are thread safe.
      *
-     * @param counter - Counter to add.
+     * @param counter
+     *            - Counter to add.
      * @return - Added counter handle.
      */
-    public static AbstractCounter addGlocalCounter(AbstractCounter counter) {
+    public static AbstractCounter addGlobalCounter(AbstractCounter counter) {
         try {
             Monitor m = Monitor.get();
             if (m != null) {
@@ -53,15 +56,18 @@ public class Monitoring {
     /**
      * Register the specified thread for monitoring.
      *
-     * @param thread - Thread to register.
+     * @param thread
+     *            - Thread to register.
      * @return - Registered?
      */
     public static boolean register(MonitoredThread thread) {
         try {
             Monitor m = Monitor.get();
             if (m != null) {
-                LogUtils.mesg(Monitoring.class,
-                        String.format("Registering thread. [%s:%d]", thread.getName(), thread.getId()));
+                LogUtils.mesg(
+                        Monitoring.class,
+                        String.format("Registering thread. [%s:%d]", thread.getName(),
+                                thread.getId()));
                 return m.register(thread);
             }
         } catch (Throwable t) {
@@ -73,7 +79,8 @@ public class Monitoring {
     /**
      * Unregister the specified thread.
      *
-     * @param thread - Thread to un-register.
+     * @param thread
+     *            - Thread to un-register.
      * @return - Un-registered?
      */
     public static boolean unregister(MonitoredThread thread) {
@@ -91,21 +98,24 @@ public class Monitoring {
     /**
      * Create a new instance of a counter.
      *
-     * @param namespace - Counter namespace.
-     * @param name      - Counter name.
-     * @param type      - Measure type.
-     * @param mode      - Production or Debug counter.
+     * @param namespace
+     *            - Counter namespace.
+     * @param name
+     *            - Counter name.
+     * @param type
+     *            - Measure type.
+     * @param mode
+     *            - Production or Debug counter.
      * @return - New instance of a counter.
      */
     public static AbstractCounter create(String namespace, String name,
-                                         Class<? extends AbstractMeasure> type,
-                                         AbstractCounter.Mode mode) {
+            Class<? extends AbstractMeasure> type, AbstractCounter.Mode mode) {
         AbstractCounter c = null;
         try {
             TimeWindow window = Monitor.get().timewindow();
 
             c = new Counter(window, type).namespace(namespace).name(name).mode(mode);
-            addGlocalCounter(c);
+            addGlobalCounter(c);
         } catch (Monitor.MonitorException me) {
             debug(Monitoring.class, me);
         }
@@ -113,10 +123,13 @@ public class Monitoring {
     }
 
     /**
-     * Increment the specified Global counter by 1. Incremented counter must by of type Count.
+     * Increment the specified Global counter by 1. Incremented counter must by
+     * of type Count.
      *
-     * @param namespace - Counter namespace
-     * @param name      - Counter name.
+     * @param namespace
+     *            - Counter namespace
+     * @param name
+     *            - Counter name.
      * @return - Counter that was incremented.
      */
     public static AbstractCounter increment(String namespace, String name) {
@@ -124,11 +137,15 @@ public class Monitoring {
     }
 
     /**
-     * Increment the specified Global counter the by value passed. Incremented counter must by of type Count.
+     * Increment the specified Global counter the by value passed. Incremented
+     * counter must by of type Count.
      *
-     * @param namespace - Counter namespace
-     * @param name      - Counter name
-     * @param value     - Value to increment by
+     * @param namespace
+     *            - Counter namespace
+     * @param name
+     *            - Counter name
+     * @param value
+     *            - Value to increment by
      * @return - Counter that was incremented.
      */
     public static AbstractCounter increment(String namespace, String name, long value) {
@@ -157,6 +174,17 @@ public class Monitoring {
         return System.currentTimeMillis();
     }
 
+    /**
+     * Utility function to stop the running timer and update the counter by 1.
+     *
+     * @param Timer
+     *            create time in millis
+     * @param namespace
+     *            Counter namespace.
+     * @param name
+     *            Counter name
+     * @return Update counter or NULL.
+     */
     public static AbstractCounter timerstop(long starttime, String namespace, String name) {
         AbstractCounter c = null;
         try {
@@ -178,13 +206,18 @@ public class Monitoring {
     /**
      * Utility function to stop and update a running timer.
      *
-     * @param starttime - Timer create time in millis
-     * @param count     - Operation count increment.
-     * @param namespace - Counter namespace.
-     * @param name      - Counter name.
+     * @param starttime
+     *            - Timer create time in millis
+     * @param count
+     *            - Operation count increment.
+     * @param namespace
+     *            - Counter namespace.
+     * @param name
+     *            - Counter name.
      * @return - Update counter or NULL.
      */
-    public static AbstractCounter timerstop(long starttime, long count, String namespace, String name) {
+    public static AbstractCounter timerstop(long starttime, long count, String namespace,
+            String name) {
         AbstractCounter c = null;
         try {
             Monitor m = Monitor.get();

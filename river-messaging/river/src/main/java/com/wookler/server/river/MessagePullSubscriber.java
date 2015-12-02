@@ -30,7 +30,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Message Poll Subscriber class implements the methods to pro-actively retrieve messages from the queue.
+ * Message Poll Subscriber class implements the methods in {@link Subscriber} to
+ * pro-actively retrieve messages from the queue.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 12/08/14
@@ -38,6 +39,11 @@ import java.util.List;
 public class MessagePullSubscriber<M> extends Subscriber<M> {
     private static final Logger log = LoggerFactory.getLogger(MessagePullSubscriber.class);
 
+    /**
+     * Dispose this subscriber instance
+     * 
+     * @see com.wookler.server.common.Configurable#dispose()
+     */
     @Override
     public void dispose() {
         if (state.getState() != EObjectState.Exception)
@@ -46,13 +52,17 @@ public class MessagePullSubscriber<M> extends Subscriber<M> {
     }
 
     /**
-     * Get the next batch of messages, using the specified batch size and timeout.
+     * Get the next batch of messages, using the specified batch size and
+     * timeout.
      *
-     * @param size    - Batch Size.
-     * @param timeout - Queue poll timeout.
+     * @param size
+     *            - Batch Size.
+     * @param timeout
+     *            - Queue poll timeout.
      * @return - List of messages.
      * @throws MessageQueueException
      */
+    @Override
     public List<Message<M>> batch(int size, long timeout) throws MessageQueueException {
         try {
             ObjectState.check(state, EObjectState.Available, MessagePullSubscriber.class);
@@ -63,7 +73,8 @@ public class MessagePullSubscriber<M> extends Subscriber<M> {
     }
 
     /**
-     * Get the next batch of messages using the pre-configured batch size and timeout.
+     * Get the next batch of messages using the pre-configured batch size and
+     * timeout.
      *
      * @return - List of messages, NULL if queue is empty.
      * @throws MessageQueueException
@@ -75,10 +86,12 @@ public class MessagePullSubscriber<M> extends Subscriber<M> {
     /**
      * Poll the queue for the next message using the specified poll timeout.
      *
-     * @param timeout - Queue poll timeout.
+     * @param timeout
+     *            - Queue poll timeout.
      * @return - Next message, NULL if timeout occurred.
      * @throws MessageQueueException
      */
+    @Override
     public Message<M> next(long timeout) throws MessageQueueException {
         try {
             ObjectState.check(state, EObjectState.Available, MessagePullSubscriber.class);
@@ -89,7 +102,8 @@ public class MessagePullSubscriber<M> extends Subscriber<M> {
     }
 
     /**
-     * Poll the queue for the next message using the pre-configured poll timeout.
+     * Poll the queue for the next message using the pre-configured poll
+     * timeout.
      *
      * @return - - Next message, NULL if timeout occurred.
      * @throws MessageQueueException
@@ -99,8 +113,8 @@ public class MessagePullSubscriber<M> extends Subscriber<M> {
     }
 
     /**
-     * Override the parent configure call to set the correct status.
-     * Sample:
+     * Override the parent configure call to set the correct status. Sample:
+     * 
      * <pre>
      * {@code
      *      <subscriber class="com.wookler.server.river.MessagePullSubscriber" name="[NAME]">
@@ -112,7 +126,8 @@ public class MessagePullSubscriber<M> extends Subscriber<M> {
      * }
      * </pre>
      *
-     * @param config - Configuration node (name=subscriber)
+     * @param config
+     *            - Configuration node (name=subscriber)
      * @throws ConfigurationException
      */
     @Override

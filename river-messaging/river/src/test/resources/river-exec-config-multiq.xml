@@ -36,7 +36,6 @@
             <params>
                 <param name="queue.lock.timeout" value="200"/>
                 <param name="queue.message.converter" value="com.wookler.server.river.test.StringMessageConverter"/>
-                <param name="ehcache.config" value="src/test/resources/test-ehcache.xml"/>
                 <param name="queue.directory" value="/tmp/river/test"/>
                 <param name="queue.onstart.reload" value="false"/>
             </params>
@@ -86,7 +85,6 @@
             <params>
                 <param name="queue.lock.timeout" value="200"/>
                 <param name="queue.message.converter" value="com.wookler.server.river.test.StringMessageConverter"/>
-                <param name="ehcache.config" value="src/test/resources/test-ehcache.xml"/>
                 <param name="queue.directory" value="/tmp/river/test"/>
                 <param name="queue.onstart.reload" value="false"/>
             </params>

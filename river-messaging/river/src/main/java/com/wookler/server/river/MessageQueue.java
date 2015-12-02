@@ -195,7 +195,6 @@ public class MessageQueue<M> implements Queue<M> {
      *          <params>
      *              <param name="queue.lock.timeout" value="[DEFAULT LOCK TIMEOUTS]"/>
      *              <param name="queue.message.converter" value="[Message to Byte Converter] "/>
-     *              <param name="ehcache.config" value="[Path to EHCache config]]"/>
      *              <param name="queue.directory" value="[Queue records directory]"/>
      *              <param name="queue.onstart.reload" value="[Reload pending messages on startup? true|false]"/>
      *              <param name="queue.recovery.threshold" value="[Number of message blocks to be recovered]"/>

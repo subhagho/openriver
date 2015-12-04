@@ -19,8 +19,10 @@
 package com.wookler.server.river;
 
 /**
- * Error type escalated by the Processors. If the processor is marked as ignore getError (default) these errors will
- * just be logged. Else the processor chain will be terminated. But subscribers will continue with the subsequent iterations.
+ * Error type escalated by the Processors. If the processor is marked as ignore
+ * getError (default) these errors will just be logged. Else the processor chain
+ * will be terminated. But subscribers will continue with the subsequent
+ * iterations.
  *
  * @author geiyer
  */
@@ -28,10 +30,25 @@ package com.wookler.server.river;
 public class NonFatalProcessorException extends Exception {
     private static final String _PREFIX_ = "Non Fatal Processor Exception : ";
 
+    /**
+     * Instantiates a new non fatal processor exception with exception message
+     *
+     * @param mesg
+     *            the exception mesg
+     */
     public NonFatalProcessorException(String mesg) {
         super(_PREFIX_ + mesg);
     }
 
+    /**
+     * Instantiates a new non fatal processor exception with exception message
+     * and exception cause
+     *
+     * @param mesg
+     *            the exception mesg
+     * @param inner
+     *            the exception cause
+     */
     public NonFatalProcessorException(String mesg, Throwable inner) {
         super(_PREFIX_ + mesg, inner);
     }

@@ -26,14 +26,29 @@ package com.wookler.server.common;
  */
 @SuppressWarnings("serial")
 public class OperationTimeoutException extends Exception {
-	private static final String _PREFIX_ = "Operation timed out : ";
+    private static final String _PREFIX_ = "Operation timed out : ";
 
-	public OperationTimeoutException(String mesg) {
-		super(_PREFIX_ + mesg);
-	}
+    /**
+     * Instantiates a new operation timeout exception with exception message
+     *
+     * @param mesg
+     *            the exception mesg
+     */
+    public OperationTimeoutException(String mesg) {
+        super(_PREFIX_ + mesg);
+    }
 
-	public OperationTimeoutException(String mesg, Throwable inner) {
-		super(String.format("%s%s : [error=%s]", _PREFIX_, mesg,
-				inner.getLocalizedMessage()), inner);
-	}
+    /**
+     * Instantiates a new operation timeout exception with exception message and
+     * cause
+     *
+     * @param mesg
+     *            the exception mesg
+     * @param inner
+     *            the throwable cause
+     */
+    public OperationTimeoutException(String mesg, Throwable inner) {
+        super(String.format("%s%s : [error=%s]", _PREFIX_, mesg, inner.getLocalizedMessage()),
+                inner);
+    }
 }

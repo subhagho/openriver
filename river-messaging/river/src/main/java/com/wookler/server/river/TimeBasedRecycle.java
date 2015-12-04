@@ -32,9 +32,10 @@ import com.wookler.server.common.utils.LogUtils;
  * @created 15/08/14
  */
 public class TimeBasedRecycle implements RecycleStrategy {
+    /** recycle time period value */
     @CParam(name = "recycle.time")
     private String recyclePeriod;
-
+    /** Time window in ms corresponding to recycle time period value */
     private long window;
 
     /**
@@ -96,6 +97,8 @@ public class TimeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Get the recycle period string
+     * 
      * @return the recyclePeriod
      */
     public String getRecyclePeriod() {
@@ -103,6 +106,8 @@ public class TimeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Set the recycle period string
+     * 
      * @param recyclePeriod
      *            the recyclePeriod to set
      */
@@ -111,6 +116,8 @@ public class TimeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Get the time window corresponding to the recycle period in ms
+     * 
      * @return the window
      */
     public long getWindow() {
@@ -118,6 +125,8 @@ public class TimeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Set the time window in ms
+     * 
      * @param window
      *            the window to set
      */

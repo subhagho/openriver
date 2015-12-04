@@ -1,13 +1,12 @@
 package com.wookler.server.river;
 
-
 /**
  * @author Geeta Iyer (geeta dot iyer at outlook.com)
  *
  * @param <M>
  * 
- *            Subscriber aware Processor, that holds the handle to the
- *            associated Subscriber.
+ *            Subscriber aware implementation of {@link Processor}, that holds
+ *            the handle to the associated {@link Subscriber}.
  */
 public abstract class SubscriberAwareProcessor<M> extends Processor<M> {
 

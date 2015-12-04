@@ -18,7 +18,8 @@
 package com.wookler.server.common;
 
 /**
- * AbstractState implementation to capture netty client state. State being captured corresponds to {@link com.wookler.server.common.EClientState}
+ * AbstractState implementation to capture client state. State being
+ * captured corresponds to {@link com.wookler.server.common.EClientState}
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * 
@@ -26,7 +27,7 @@ package com.wookler.server.common;
  *
  */
 public class ClientState extends AbstractState<EClientState> {
-    
+
     /**
      * Utility method to check the current setState of an Client instance.
      *
@@ -38,19 +39,17 @@ public class ClientState extends AbstractState<EClientState> {
      *            - Owner instance.
      * @throws StateException
      */
-	public static final boolean check(ClientState current,
-			EClientState expected, Class<?> owner) throws StateException {
-		if (current.state == expected)
-			return true;
-		if (current.state == EClientState.Exception) {
-			throw new StateException(EClientState.class.getCanonicalName(), "["
-					+ owner.getCanonicalName() + "] is in getError setState.",
-					current.error);
-		} else {
-			throw new StateException(EClientState.class.getCanonicalName(), "["
-					+ owner.getCanonicalName() + "] : [setState="
-					+ current.state.name() + "][expected=" + expected.name()
-					+ "]");
-		}
-	}
+    public static final boolean check(ClientState current, EClientState expected, Class<?> owner)
+            throws StateException {
+        if (current.state == expected)
+            return true;
+        if (current.state == EClientState.Exception) {
+            throw new StateException(EClientState.class.getCanonicalName(), "["
+                    + owner.getCanonicalName() + "] is in getError setState.", current.error);
+        } else {
+            throw new StateException(EClientState.class.getCanonicalName(), "["
+                    + owner.getCanonicalName() + "] : [setState=" + current.state.name()
+                    + "][expected=" + expected.name() + "]");
+        }
+    }
 }

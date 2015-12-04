@@ -19,16 +19,22 @@
 package com.wookler.server.river;
 
 /**
- * Class represents a records record that is byte serialized and stored in the Chronicle queue.
+ * Class represents a records record that is byte serialized and stored in the
+ * Chronicle queue.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 11/08/14
  */
 public class Record {
+    /** the record index within the block */
     private long index;
+    /** record size in bytes */
     private int size;
+    /** record sequence */
     private long sequence;
+    /** byte representing data in the record */
     private byte[] bytes;
+    /** record creation timestamp */
     private long timestamp = System.currentTimeMillis();
 
     /**
@@ -43,7 +49,8 @@ public class Record {
     /**
      * Set the queue index.
      *
-     * @param index - Chronicle queue index.
+     * @param index
+     *            - Chronicle queue index.
      * @return - self.
      */
     public Record index(long index) {
@@ -64,7 +71,8 @@ public class Record {
     /**
      * Set the size of the records bytes.
      *
-     * @param size - Data Size.
+     * @param size
+     *            - Data Size.
      * @return - self.
      */
     public Record size(int size) {
@@ -85,7 +93,8 @@ public class Record {
     /**
      * Set the records bytes for this record.
      *
-     * @param data - Data byte array.
+     * @param data
+     *            - Data byte array.
      * @return - self.
      */
     public Record bytes(byte[] data) {
@@ -106,7 +115,8 @@ public class Record {
     /**
      * Set the creation timestamp of this record.
      *
-     * @param timestamp - Creation timestamp
+     * @param timestamp
+     *            - Creation timestamp
      * @return - self.
      */
     public Record timestamp(long timestamp) {
@@ -115,16 +125,33 @@ public class Record {
         return this;
     }
 
+    /**
+     * Set the record sequence.
+     *
+     * @param sequence
+     *            the sequence to set
+     * @return self
+     */
     public Record sequence(long sequence) {
         this.sequence = sequence;
 
         return this;
     }
 
+    /**
+     * Get the record sequence.
+     *
+     * @return the record sequence
+     */
     public long sequence() {
         return sequence;
     }
 
+    /**
+     * Create a copy of record from this record.
+     *
+     * @return the copy record
+     */
     public Record copy() {
         Record r = new Record();
         r.size = this.size;

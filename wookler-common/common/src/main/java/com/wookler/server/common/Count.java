@@ -23,12 +23,14 @@ import org.joda.time.DateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Simple counter measure.
+ * Simple counter measure implementation of {@link AbstractMeasure}. Consists of
+ * count value
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 05/08/14
  */
 public class Count extends AbstractMeasure {
+    /** counter value */
     protected AtomicLong value = new AtomicLong(0);
 
     /**
@@ -43,7 +45,8 @@ public class Count extends AbstractMeasure {
     /**
      * Set the count value.
      *
-     * @param value - Count value.
+     * @param value
+     *            - Count value.
      * @return - self.
      */
     public Count value(long value) {
@@ -62,9 +65,11 @@ public class Count extends AbstractMeasure {
     }
 
     /**
-     * Increment the current count value by the value of the specified count measure.
+     * Increment the current count value by the value of the specified count
+     * measure.
      *
-     * @param measure - Target measure to add.
+     * @param measure
+     *            - Target measure to add.
      * @return - self.
      */
     @Override
@@ -76,7 +81,7 @@ public class Count extends AbstractMeasure {
     }
 
     /**
-     * Clear the count value.
+     * Clear the count value (set to 0).
      *
      * @return - self.
      */
@@ -87,14 +92,15 @@ public class Count extends AbstractMeasure {
     }
 
     /**
-     * Default to string representation of this count measure.
+     * Default to string representation of this count measure. Consists of Count
+     * class name, window and count value
      *
      * @return - String representation.
      */
     @Override
     public String toString() {
-        return String.format("{%s: WINDOW=%s, VALUE=%d}", getClass().getSimpleName(),
-                new DateTime(window).toString(_WINDOW_DATE_FORMAT_), value.get());
+        return String.format("{%s: WINDOW=%s, VALUE=%d}", getClass().getSimpleName(), new DateTime(
+                window).toString(_WINDOW_DATE_FORMAT_), value.get());
     }
 
     /**

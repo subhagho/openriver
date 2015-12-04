@@ -32,10 +32,20 @@ import com.wookler.server.common.utils.LogUtils;
  */
 public class SizeBasedRecycle implements RecycleStrategy {
 
+    /**
+     * recycle size config param -- if size unit is not specified then the
+     * default is Bytes
+     */
     @CParam(name = "recycle.size")
     private String sizeValue;
+    /** DataSize instance corresponding to spec */
     private DataSize size;
 
+    /**
+     * If the block size has crossed the recycle size threshold.
+     * 
+     * @see com.wookler.server.river.RecycleStrategy#recycle(com.wookler.server.river.MessageBlock)
+     */
     @Override
     public boolean recycle(MessageBlock block) {
         if (size.getValue() <= block.size()) {
@@ -46,6 +56,23 @@ public class SizeBasedRecycle implements RecycleStrategy {
         return false;
     }
 
+    /**
+     * Configure this instance of the recycle strategy. Construct a
+     * {@link DataSize} instance based on the specified recycle size.
+     * <p/>
+     * 
+     * <pre>
+     * {@code
+     *     <recycle class="com.wookler.server.river.SizeBasedRecycle">
+     *                 <params>
+     *                     <param name="recycle.size" value="[size value]"/>
+     *                 </params>
+     *     </recycle>
+     * }
+     * </pre>
+     * 
+     * @see com.wookler.server.common.Configurable#configure(com.wookler.server.common.config.ConfigNode)
+     */
     @Override
     public void configure(ConfigNode config) throws ConfigurationException {
         if (!(config instanceof ConfigPath))
@@ -65,6 +92,8 @@ public class SizeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Get the DataSize corresponding to recycle size value
+     * 
      * @return the size
      */
     public DataSize getSize() {
@@ -72,6 +101,8 @@ public class SizeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Set the DataSize
+     * 
      * @param size
      *            the size to set
      */
@@ -80,6 +111,8 @@ public class SizeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Get the recycle size value string
+     * 
      * @return the sizeValue
      */
     public String getSizeValue() {
@@ -87,6 +120,8 @@ public class SizeBasedRecycle implements RecycleStrategy {
     }
 
     /**
+     * Set the recycle size value string
+     * 
      * @param sizeValue
      *            the sizeValue to set
      */

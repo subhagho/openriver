@@ -21,11 +21,24 @@ package com.wookler.server.common;
 import static com.wookler.server.common.utils.LogUtils.debug;
 
 /**
+ * Counter impl of {@link AbstractCounter}. The implementation of abstract
+ * copy() consists of creating a new Counter instance as copy and returning this
+ * copied instance.
+ * 
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 05/08/14
  */
 public class Counter extends AbstractCounter {
 
+    /**
+     * Instantiates a new counter with the specified window and instantiates
+     * total, period and delta measures of specified type
+     *
+     * @param window
+     *            the window
+     * @param type
+     *            the type
+     */
     public Counter(TimeWindow window, Class<? extends AbstractMeasure> type) {
         super(window, type);
         try {
@@ -51,6 +64,5 @@ public class Counter extends AbstractCounter {
 
         return c;
     }
-
 
 }

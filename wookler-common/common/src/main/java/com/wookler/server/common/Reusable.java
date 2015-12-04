@@ -26,18 +26,18 @@ package com.wookler.server.common;
  */
 public interface Reusable<T> {
 
-	/**
-	 * Create a new instance of the current type.
-	 *
-	 * @return
-	 */
-	public T newInstance();
+    /**
+     * Create a new instance of the current type.
+     *
+     * @return
+     */
+    public T newInstance();
 
-	/**
-	 * Dispose the specified instance of the object.
-	 *
-	 * @param o
-	 *            - Instance to be disposed.
-	 */
-	public void dispose(T o);
+    /**
+     * Dispose the specified instance of the object.
+     *
+     * @param o
+     *            - Instance to be disposed.
+     */
+    public void dispose(T o);
 }

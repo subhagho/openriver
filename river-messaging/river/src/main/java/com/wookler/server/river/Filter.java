@@ -23,23 +23,44 @@ package com.wookler.server.river;
  * @created 08/09/14
  */
 public interface Filter<M> {
+
+    /**
+     * Exception type escalated as part of filter evaluation
+     */
     @SuppressWarnings("serial")
-	public static final class FilterException extends Exception {
+    public static final class FilterException extends Exception {
         private static final String _PREFIX_ = "Filter Exception : ";
 
+        /**
+         * Instantiates a new filter exception with the exception message
+         *
+         * @param mesg
+         *            the exception message
+         */
         public FilterException(String mesg) {
             super(_PREFIX_ + mesg);
         }
 
+        /**
+         * Instantiates a new filter exception with exception message and
+         * exception cause
+         *
+         * @param mesg
+         *            the exception mesg
+         * @param inner
+         *            the exception cause
+         */
         public FilterException(String mesg, Throwable inner) {
-            super(String.format("%s%s : [cause=%s]", _PREFIX_, mesg, inner.getLocalizedMessage()), inner);
+            super(String.format("%s%s : [cause=%s]", _PREFIX_, mesg, inner.getLocalizedMessage()),
+                    inner);
         }
     }
 
     /**
      * Parse the specified string as a query condition.
      *
-     * @param filter - Query condition string.
+     * @param filter
+     *            - Query condition string.
      * @return - self.
      * @exception com.wookler.server.river.Filter.FilterException
      */
@@ -55,7 +76,8 @@ public interface Filter<M> {
     /**
      * Evaluate if the passed message matches the query condition.
      *
-     * @param message - Message object to evaluate.
+     * @param message
+     *            - Message object to evaluate.
      * @return - Matches?
      * @exception com.wookler.server.river.Filter.FilterException
      */

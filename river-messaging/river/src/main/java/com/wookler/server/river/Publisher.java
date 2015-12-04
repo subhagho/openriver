@@ -27,7 +27,9 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * Publisher handle to the Message Queue.
+ * Publisher handle to the Message Queue. Exposes publish APIs to publish a
+ * single message or a list of messages to the {@link MessageQueue}.
+ * Encapsulates publish retries
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 19/08/14
@@ -35,21 +37,34 @@ import java.util.List;
 public class Publisher<M> {
 
     @SuppressWarnings("unused")
-	private static final Logger log = LoggerFactory.getLogger(Publisher.class);
+    private static final Logger log = LoggerFactory.getLogger(Publisher.class);
 
+    /** The default RETRY_COUNT. */
     private static final int RETRY_COUNT = 3;
 
+    /** The queue handle. */
     private Queue<M> queue;
+    /** retry count */
     private int retryCount = RETRY_COUNT;
 
+    /**
+     * Instantiates a new publisher for the specified queue
+     *
+     * @param queue
+     *            the {@link MessageQueue} corresponding to this publisher
+     *            handle
+     */
     public Publisher(Queue<M> queue) {
         this.queue = queue;
     }
 
     /**
-     * Publish a message to the queue.
+     * Publish a message to the queue. If message publish fails, then it is
+     * retried if the failure count is within threshold. Otherwise
+     * {@link MessageQueueException} is thrown
      *
-     * @param message - Message
+     * @param message
+     *            - Message published
      * @throws MessageQueueException
      */
     public void publish(M message) throws MessageQueueException {
@@ -61,18 +76,24 @@ public class Publisher<M> {
             } catch (LockTimeoutException te) {
                 r_count++;
                 if (r_count >= retryCount) {
-                    throw new MessageQueueException("Publish retries exhausted. [RETRIES=" + retryCount + "]", te);
+                    throw new MessageQueueException("Publish retries exhausted. [RETRIES="
+                            + retryCount + "]", te);
                 }
-                LogUtils.debug(getClass(),
-                                      String.format("Timeout : [retry=%d] : %s", r_count, te.getLocalizedMessage()));
+                LogUtils.debug(
+                        getClass(),
+                        String.format("Timeout : [retry=%d] : %s", r_count,
+                                te.getLocalizedMessage()));
             }
         }
     }
 
     /**
-     * Publish a list of messages to the queue.
+     * Publish a list of messages to the queue. If message publish fails, then
+     * it is retried if the failure count is within threshold. Otherwise
+     * {@link MessageQueueException} is thrown
      *
-     * @param messages - List of messages.
+     * @param messages
+     *            - List of messages.
      * @throws MessageQueueException
      */
     public void publish(List<M> messages) throws MessageQueueException {
@@ -84,18 +105,23 @@ public class Publisher<M> {
             } catch (LockTimeoutException te) {
                 r_count++;
                 if (r_count >= retryCount) {
-                    throw new MessageQueueException("Publish retries exhausted. [RETRIES=" + retryCount + "]", te);
+                    throw new MessageQueueException("Publish retries exhausted. [RETRIES="
+                            + retryCount + "]", te);
                 }
-                LogUtils.debug(getClass(),
-                                      String.format("Timeout : [retry=%d] : %s", r_count, te.getLocalizedMessage()));
+                LogUtils.debug(
+                        getClass(),
+                        String.format("Timeout : [retry=%d] : %s", r_count,
+                                te.getLocalizedMessage()));
             }
         }
     }
 
     /**
-     * Set the number of times to retry publishing messages in case of Lock timeouts. Default = 3.
+     * Set the number of times to retry publishing messages in case of Lock
+     * timeouts. Default = 3.
      *
-     * @param retryCount - # publish retries.
+     * @param retryCount
+     *            - # publish retries.
      * @return - self.
      */
     public Publisher<M> retryCount(int retryCount) {
@@ -105,7 +131,8 @@ public class Publisher<M> {
     }
 
     /**
-     * Get the number of times to retry publishing messages in case of Lock timeouts.
+     * Get the number of times to retry publishing messages in case of Lock
+     * timeouts.
      *
      * @return - # publish retries.
      */

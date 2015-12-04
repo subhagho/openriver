@@ -22,7 +22,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.wookler.server.common.utils.LogUtils;
 
-// TODO: Auto-generated Javadoc
 /**
  * Abstract base class to be implemented to handle message records
  * transformations. Data transformations are in the byte format to be saved into

@@ -38,12 +38,12 @@ import com.wookler.server.common.config.ConfigValueList;
 import com.wookler.server.common.utils.LogUtils;
 
 /**
- * Framework class for executing query based selector pattern. Messages are
- * passed along the selector chain and for every query condition that is
- * satisfied the corresponding processor is invoked. The processing is serial in
- * nature, as in the output of the each processor is fed into the subsequent
- * ones. Hence any modification made to the message records by a processor is
- * visible to the those down the chain.
+ * Framework class that extends {@link Processor} for executing query based
+ * selector pattern. Messages are passed along the selector chain and for every
+ * query condition that is satisfied the corresponding processor is invoked. The
+ * processing is serial in nature, as in the output of the each processor is fed
+ * into the subsequent ones. Hence any modification made to the message records
+ * by a processor is visible to the those down the chain.
  * 
  * This processor is always subscriber aware. The processors that are configured
  * as part of this selector can or cannot be subscriber aware.
@@ -51,7 +51,7 @@ import com.wookler.server.common.utils.LogUtils;
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 08/09/14
  */
-@CPath(path="selector")
+@CPath(path = "selector")
 public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
     private static final Logger log = LoggerFactory.getLogger(MessageSelectorProcessor.class);
 
@@ -62,11 +62,12 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
         public static final String CONFIG_NODE_QUERY = "query";
     }
 
+    /** the selector chain consisting of mapping of Filter, Processor */
     private LinkedHashMap<Filter<M>, Processor<M>> selectors = new LinkedHashMap<Filter<M>, Processor<M>>();
 
     /**
-     * Pass the messages to the selector chain an execute the processors for the
-     * query conditions that are satisfied.
+     * Pass the messages to the selector chain and execute the processors for
+     * the query conditions that are satisfied.
      *
      * @param messages
      *            - List of messages to be processed.
@@ -74,7 +75,8 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
      * @throws ProcessingException
      */
     @Override
-    protected ProcessResponse<M> process(List<Message<M>> messages) throws ProcessingException, NonFatalProcessorException {
+    protected ProcessResponse<M> process(List<Message<M>> messages) throws ProcessingException,
+            NonFatalProcessorException {
         ProcessResponse<M> response = new ProcessResponse<M>();
         try {
             ProcessState.check(state, EProcessState.Running, getClass());
@@ -85,11 +87,13 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
                     if (q.matches(m.data())) {
                         Processor<M> p = selectors.get(q);
                         ProcessResponse<M> r = p.process(mr);
-                        if (r.response() == EProcessResponse.Success && r.messages() != null && !r.messages().isEmpty()) {
+                        if (r.response() == EProcessResponse.Success && r.messages() != null
+                                && !r.messages().isEmpty()) {
                             mr = r.messages().get(0);
-                        } else if (r.response() == EProcessResponse.Exception || r.response() == EProcessResponse.Failed) {
-                            LogUtils.warn(getClass(),
-                                    String.format("Processor error [%s] : %s", r.response().name(), r.error().getLocalizedMessage()));
+                        } else if (r.response() == EProcessResponse.Exception
+                                || r.response() == EProcessResponse.Failed) {
+                            LogUtils.warn(getClass(), String.format("Processor error [%s] : %s", r
+                                    .response().name(), r.error().getLocalizedMessage()));
                         }
                     }
                 }
@@ -119,7 +123,8 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
      * @throws ProcessingException
      */
     @Override
-    protected ProcessResponse<M> process(Message<M> message) throws ProcessingException, NonFatalProcessorException {
+    protected ProcessResponse<M> process(Message<M> message) throws ProcessingException,
+            NonFatalProcessorException {
         throw new ProcessingException("Method not implemented.");
     }
 
@@ -147,8 +152,9 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
     public void configure(ConfigNode c) throws ConfigurationException {
         super.configure(c);
         if (!(c instanceof ConfigPath))
-            throw new ConfigurationException(String.format("Invalid config node type. [expected:%s][actual:%s]", ConfigPath.class.getCanonicalName(),
-                    c.getClass().getCanonicalName()));
+            throw new ConfigurationException(String.format(
+                    "Invalid config node type. [expected:%s][actual:%s]",
+                    ConfigPath.class.getCanonicalName(), c.getClass().getCanonicalName()));
         LogUtils.debug(getClass(), ((ConfigPath) c).path());
         ConfigPath cp = (ConfigPath) c;
         ConfigNode config = cp.search(Constants.CONFIG_NODE_SELECTOR);
@@ -169,10 +175,20 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
         state.setState(EProcessState.Running);
     }
 
+    /**
+     * Configure selector. Selector corresponds to {@link Filter} query and the
+     * corresponding {@link Processor}
+     *
+     * @param node
+     *            the node
+     * @throws ConfigurationException
+     *             the configuration exception
+     */
     private void configSelector(ConfigNode node) throws ConfigurationException {
         if (!(node instanceof ConfigPath))
-            throw new ConfigurationException(String.format("Invalid config node type. [expected:%s][actual:%s]", ConfigPath.class.getCanonicalName(),
-                    node.getClass().getCanonicalName()));
+            throw new ConfigurationException(String.format(
+                    "Invalid config node type. [expected:%s][actual:%s]",
+                    ConfigPath.class.getCanonicalName(), node.getClass().getCanonicalName()));
         LogUtils.debug(getClass(), ((ConfigPath) node).path());
         ConfigPath cp = (ConfigPath) node;
         ConfigNode qn = cp.search(Constants.CONFIG_NODE_QUERY);
@@ -187,16 +203,26 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
         selectors.put(q, p);
     }
 
+    /**
+     * Configure {@link Processor}.
+     *
+     * @param node
+     *            the node
+     * @return the processor
+     * @throws ConfigurationException
+     *             the configuration exception
+     */
     @SuppressWarnings("unchecked")
     private Processor<M> configProcessor(ConfigNode node) throws ConfigurationException {
         try {
             if (node instanceof ConfigPath) {
-            	ConfigNode cnode = ConfigUtils.getConfigNode(node, Processor.class, null);
+                ConfigNode cnode = ConfigUtils.getConfigNode(node, Processor.class, null);
 
-            	Class<?> cls = ConfigUtils.getImplementingClass(cnode);
+                Class<?> cls = ConfigUtils.getImplementingClass(cnode);
                 Object o = cls.newInstance();
                 if (!(o instanceof Processor))
-                    throw new ConfigurationException("Invalid Processor class specified. [class=" + cls.getCanonicalName() + "]");
+                    throw new ConfigurationException("Invalid Processor class specified. [class="
+                            + cls.getCanonicalName() + "]");
                 Processor<M> p = (Processor<M>) o;
                 if (o instanceof SubscriberAwareProcessor) {
                     ((SubscriberAwareProcessor<M>) p).setSubscriber(this.getSubscriber());
@@ -212,28 +238,41 @@ public class MessageSelectorProcessor<M> extends SubscriberAwareProcessor<M> {
         }
     }
 
+    /**
+     * Configure the {@link Filter} and creates the query.
+     *
+     * @param node
+     *            the node
+     * @return the filter
+     * @throws ConfigurationException
+     *             the configuration exception
+     */
     @SuppressWarnings("unchecked")
     private Filter<M> createQuery(ConfigNode node) throws ConfigurationException {
         try {
             if (!(node instanceof ConfigPath))
-                throw new ConfigurationException(String.format("Invalid config node type. [expected:%s][actual:%s]",
+                throw new ConfigurationException(String.format(
+                        "Invalid config node type. [expected:%s][actual:%s]",
                         ConfigPath.class.getCanonicalName(), node.getClass().getCanonicalName()));
             LogUtils.debug(getClass(), ((ConfigPath) node).path());
             ConfigAttributes ca = ConfigUtils.attributes(node);
             String c = ca.attribute(GlobalConstants.CONFIG_ATTR_CLASS);
             if (StringUtils.isEmpty(c))
-                throw new ConfigurationException("Missing attribute. [name=" + GlobalConstants.CONFIG_ATTR_CLASS + "]");
+                throw new ConfigurationException("Missing attribute. [name="
+                        + GlobalConstants.CONFIG_ATTR_CLASS + "]");
 
             Class<?> cls = Class.forName(c);
             Object o = cls.newInstance();
             if (!(o instanceof Filter)) {
-                throw new ConfigurationException("Invalid Query implementation specified. [class=" + cls.getCanonicalName() + "]");
+                throw new ConfigurationException("Invalid Query implementation specified. [class="
+                        + cls.getCanonicalName() + "]");
             }
             Filter<M> filter = (Filter<M>) o;
 
             String q = ca.attribute(Constants.CONFIG_ATTR_QUERY);
             if (StringUtils.isEmpty(q))
-                throw new ConfigurationException("Missing attribute. [name=" + Constants.CONFIG_ATTR_QUERY + "]");
+                throw new ConfigurationException("Missing attribute. [name="
+                        + Constants.CONFIG_ATTR_QUERY + "]");
             filter.parse(q);
 
             return filter;

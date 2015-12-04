@@ -21,149 +21,243 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Class encapsulates the response from invoked process handles.
+ * Class encapsulates the response from invoked {@link Processor} handles.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 29/08/14
  */
 public class ProcessResponse<M> {
-	public static final class ErrorResponse<M> {
-		private String		process;
-		private Message<M>	message;
-		private Throwable	error;
 
-		public String process() {
-			return process;
-		}
+    /**
+     * ErrorResponse that encapsulates error condition
+     *
+     * @param <M>
+     *            the generic type
+     */
+    public static final class ErrorResponse<M> {
+        /** the class throwing error */
+        private String process;
+        /** the message for which error has occurred */
+        private Message<M> message;
+        /** the exception cause */
+        private Throwable error;
 
-		public ErrorResponse<M> process(String process) {
-			this.process = process;
+        /**
+         * Return the {@link Processor} handle string throwing exception
+         *
+         * @return the processor handle string
+         */
+        public String process() {
+            return process;
+        }
 
-			return this;
-		}
+        /**
+         * Set the {@link Processor} handle name throwing exception
+         *
+         * @param process
+         *            the processor string
+         * @return self
+         */
+        public ErrorResponse<M> process(String process) {
+            this.process = process;
 
-		public Message<M> message() {
-			return message;
-		}
+            return this;
+        }
 
-		public ErrorResponse<M> message(Message<M> message) {
-			this.message = message;
+        /**
+         * Get the {@link Message} object for which error occurred.
+         *
+         * @return the message
+         */
+        public Message<M> message() {
+            return message;
+        }
 
-			return this;
-		}
+        /**
+         * Set the {@link Message} for which error has occurred.
+         *
+         * @param message
+         *            the {@link Message}
+         * @return self
+         */
+        public ErrorResponse<M> message(Message<M> message) {
+            this.message = message;
 
-		public Throwable error() {
-			return error;
-		}
+            return this;
+        }
 
-		public ErrorResponse<M> error(Throwable error) {
-			this.error = error;
+        /**
+         * Get the error cause from the error response
+         *
+         * @return the throwable cause
+         */
+        public Throwable error() {
+            return error;
+        }
 
-			return this;
-		}
+        /**
+         * Set the error cause in the error response
+         *
+         * @param error
+         *            the throwable cause
+         * @return self
+         */
+        public ErrorResponse<M> error(Throwable error) {
+            this.error = error;
 
-		public String key() {
-			if (!StringUtils.isEmpty(process) && message != null) {
-				return String.format("%s-%s", process, message.header().id());
-			}
-			return null;
-		}
-	}
+            return this;
+        }
 
-	private EProcessResponse				response		= null;
-	private List<Message<M>>				messages		= null;
-	private Throwable						error			= null;
-	private String							process;
-	private Map<String, ErrorResponse<M>>	errorMessages	= null;
+        /**
+         * Key corresponding to the error response. Consists of process name and
+         * message header id.
+         *
+         * @return the error response key
+         */
+        public String key() {
+            if (!StringUtils.isEmpty(process) && message != null) {
+                return String.format("%s-%s", process, message.header().id());
+            }
+            return null;
+        }
+    }
 
-	/**
-	 * Set the response setState.
-	 *
-	 * @param response
-	 *            - Response setState.
-	 * @return - self;
-	 */
-	public ProcessResponse<M> response(EProcessResponse response) {
-		this.response = response;
+    /** The response setState. */
+    private EProcessResponse response = null;
+    /** Message list */
+    private List<Message<M>> messages = null;
+    /** error cause */
+    private Throwable error = null;
+    /** processor name */
+    private String process;
+    /** Map of error responses */
+    private Map<String, ErrorResponse<M>> errorMessages = null;
 
-		return this;
-	}
+    /**
+     * Set the response setState.
+     *
+     * @param response
+     *            - Response setState.
+     * @return - self;
+     */
+    public ProcessResponse<M> response(EProcessResponse response) {
+        this.response = response;
 
-	/**
-	 * Get the response setState.
-	 *
-	 * @return - Response setState.
-	 */
-	public EProcessResponse response() {
-		return response;
-	}
+        return this;
+    }
 
-	/**
-	 * Set the returned list of messages.
-	 *
-	 * @param messages
-	 *            - List of messages.
-	 * @return - self;
-	 */
-	public ProcessResponse<M> messages(List<Message<M>> messages) {
-		this.messages = messages;
+    /**
+     * Get the response setState.
+     *
+     * @return - Response setState.
+     */
+    public EProcessResponse response() {
+        return response;
+    }
 
-		return this;
-	}
+    /**
+     * Set the returned list of messages.
+     *
+     * @param messages
+     *            - List of messages.
+     * @return - self;
+     */
+    public ProcessResponse<M> messages(List<Message<M>> messages) {
+        this.messages = messages;
 
-	/**
-	 * Add a processed message to the list.
-	 *
-	 * @param message
-	 *            - Message to add.
-	 * @return - self.
-	 */
-	public ProcessResponse<M> add(Message<M> message) {
-		if (this.messages == null)
-			this.messages = new ArrayList<Message<M>>();
-		this.messages.add(message);
+        return this;
+    }
 
-		return this;
-	}
+    /**
+     * Add a processed message to the list.
+     *
+     * @param message
+     *            - Message to add.
+     * @return - self.
+     */
+    public ProcessResponse<M> add(Message<M> message) {
+        if (this.messages == null)
+            this.messages = new ArrayList<Message<M>>();
+        this.messages.add(message);
 
-	/**
-	 * Get the list of messages returned by the process handle.
-	 *
-	 * @return - List of messages.
-	 */
-	public List<Message<M>> messages() {
-		return messages;
-	}
+        return this;
+    }
 
-	public ProcessResponse<M> error(Throwable error, String process) {
-		this.response = EProcessResponse.Exception;
-		this.error = error;
-		this.process = process;
-		return this;
-	}
+    /**
+     * Get the list of messages returned by the process handle.
+     *
+     * @return - List of messages.
+     */
+    public List<Message<M>> messages() {
+        return messages;
+    }
 
-	public Throwable error() {
-		return error;
-	}
+    /**
+     * Capture error corresponding to the specified process with the error
+     * cause. Set the response setState to exception
+     *
+     * @param error
+     *            the error cause
+     * @param process
+     *            the process name
+     * @return self
+     */
+    public ProcessResponse<M> error(Throwable error, String process) {
+        this.response = EProcessResponse.Exception;
+        this.error = error;
+        this.process = process;
+        return this;
+    }
 
-	public String process() {
-		return process;
-	}
+    /**
+     * Get the error cause.
+     *
+     * @return the throwable
+     */
+    public Throwable error() {
+        return error;
+    }
 
-	public ProcessResponse<M> addMessageError(String process,
-			Message<M> message, Throwable error) {
-		ErrorResponse<M> er = new ErrorResponse<M>().process(process)
-				.message(message).error(error);
-		String key = er.key();
-		if (!StringUtils.isEmpty(key)) {
-			if (errorMessages == null)
-				errorMessages = new HashMap<>();
-			errorMessages.put(key, er);
-		}
-		return this;
-	}
+    /**
+     * Get the processor name.
+     *
+     * @return the process string
+     */
+    public String process() {
+        return process;
+    }
 
-	public Map<String, ErrorResponse<M>> getErroredMessages() {
-		return errorMessages;
-	}
+    /**
+     * Creates a {@link ErrorResponse} instance for the specified processor name
+     * and the {@link Message} with the error cause and add it to the
+     * errorMessages map
+     *
+     * @param process
+     *            the processor name
+     * @param message
+     *            the message for which error has occurred
+     * @param error
+     *            the error cause
+     * @return {@link ProcessResponse}
+     */
+    public ProcessResponse<M> addMessageError(String process, Message<M> message, Throwable error) {
+        ErrorResponse<M> er = new ErrorResponse<M>().process(process).message(message).error(error);
+        String key = er.key();
+        if (!StringUtils.isEmpty(key)) {
+            if (errorMessages == null)
+                errorMessages = new HashMap<>();
+            errorMessages.put(key, er);
+        }
+        return this;
+    }
+
+    /**
+     * Gets the map of errored messages consists of process response key and
+     * {@link ErrorResponse}
+     *
+     * @return the errored messages
+     */
+    public Map<String, ErrorResponse<M>> getErroredMessages() {
+        return errorMessages;
+    }
 }

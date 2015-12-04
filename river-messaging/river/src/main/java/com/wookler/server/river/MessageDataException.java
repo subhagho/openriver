@@ -17,6 +17,8 @@
 package com.wookler.server.river;
 
 /**
+ * Exception type escalated while reading the message data record
+ * 
  * @author Subho Ghosh (subho dot ghosh at outlook.com)
  * @created 10/12/14
  */
@@ -24,10 +26,25 @@ package com.wookler.server.river;
 public class MessageDataException extends Exception {
     private static final String _PREFIX_ = "Message Data Exception : ";
 
+    /**
+     * Instantiates a new message data exception with the exception message
+     *
+     * @param mesg
+     *            the exception mesg
+     */
     public MessageDataException(String mesg) {
         super(_PREFIX_ + mesg);
     }
 
+    /**
+     * Instantiates a new message data exception with exception message and
+     * exception cause
+     *
+     * @param mesg
+     *            the exception mesg
+     * @param inner
+     *            the exception cause
+     */
     public MessageDataException(String mesg, Throwable inner) {
         super(_PREFIX_ + mesg, inner);
     }

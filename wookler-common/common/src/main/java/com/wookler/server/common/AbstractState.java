@@ -19,7 +19,7 @@ package com.wookler.server.common;
 
 /**
  * Generic AbstractState class that holds the state information consisting of
- * the state, an array of blocked on states and exception object in the case of
+ * the state and exception object in the case of
  * errors.
  * 
  * Child classes should be typed specifying the type of state being captured.

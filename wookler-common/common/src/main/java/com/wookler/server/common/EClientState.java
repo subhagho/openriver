@@ -18,7 +18,7 @@
 package com.wookler.server.common;
 
 /**
- * Enumeration for defining the Netty client states.
+ * Enumeration for defining the client states.
  * Can be unknown, configured, connecting, connected, closed or exception.
  *
  * @author Subho Ghosh (subho dot ghosh at outlook.com)

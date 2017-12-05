@@ -9,6 +9,8 @@ package com.wookler.server.common.utils;
 
 import static org.junit.Assert.*;
 
+import com.wookler.server.common.config.ConfigParser;
+import com.wookler.server.common.config.XMLConfigParser;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -63,8 +65,8 @@ public class Test_RecycledFileOutput {
 		// Otherwise the test behavior is unpredictable while running through
 		// maven.
 		Env.reset();
-
-		Env.create(CONFIG_FILE, CONFIG_PATH);
+		ConfigParser parser = new XMLConfigParser();
+		Env.create(CONFIG_FILE, CONFIG_PATH, parser);
 	}
 
 	/**

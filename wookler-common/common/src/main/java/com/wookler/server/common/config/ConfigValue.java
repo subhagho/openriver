@@ -254,6 +254,20 @@ public class ConfigValue extends AbstractConfigNode {
 		}
 	}
 
+	public boolean getBooleanValue() throws ConfigurationException {
+		String v = value();
+		if (!StringUtils.isEmpty(v)) {
+			boolean b = false;
+			if (v.compareToIgnoreCase("true") == 0 || v.compareToIgnoreCase("yes") == 0 || v.compareTo("1") == 0) {
+				b = true;
+			} else {
+				b = false;
+			}
+			return b;
+		} else {
+			throw new ConfigurationException("Error parsing boolean value : Value is NULL/empty.");
+		}
+	}
 	/**
 	 * Create a copy of this node.
 	 *

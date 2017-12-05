@@ -105,14 +105,15 @@ public class ConfigTest extends TestCase {
 
 	public void testLoad() throws Exception {
 		Config config = new Config(CONFIG_FILE, CONFIG_ROOT_PATH);
-		config.load();
-
+		ConfigParser parser = new XMLConfigParser();
+		parser.parse(config, CONFIG_FILE, CONFIG_ROOT_PATH);
 		System.out.println(config.toString());
 	}
 
 	public void testAutoParse() throws Exception {
 		Config config = new Config(CONFIG_FILE_AUTO, CONFIG_ROOT_PATH);
-		config.load();
+        ConfigParser parser = new XMLConfigParser();
+        parser.parse(config, CONFIG_FILE, CONFIG_ROOT_PATH);
 
 		TestAuto ta = new TestAuto();
 		ConfigUtils.parse(config.node(), ta);

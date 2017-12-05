@@ -20,16 +20,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import com.wookler.server.common.config.*;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.wookler.river.map.MapDataStore.PartitionDefinition;
-import com.wookler.server.common.config.Config;
-import com.wookler.server.common.config.ConfigNode;
-import com.wookler.server.common.config.ConfigPath;
-import com.wookler.server.common.config.ConfigUtils;
 import com.wookler.server.common.utils.FileUtils;
 import com.wookler.server.common.utils.LogUtils;
 
@@ -79,7 +76,8 @@ public class Test_MapDataStore {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		config = new Config(CONFIG_FILE, CONFIG_ROOT);
-		config.load();
+		ConfigParser parser = new XMLConfigParser();
+		parser.parse(config, CONFIG_FILE, CONFIG_ROOT);
 		ConfigPath root = (ConfigPath) config.node();
 		ConfigNode mapc = ConfigUtils.getConfigNode(root, MapDataStore.class,
 				null);

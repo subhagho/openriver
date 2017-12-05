@@ -21,11 +21,21 @@
 		<wookler.common.target>${project.build.directory}/common</wookler.common.target>
 	</properties>
 
+	<repositories>
+    	<repository>
+        		<id>wookler-common</id>
+			<url>https://raw.githubusercontent.com/subhagho/openriver-maven/wookler-repo/</url>
+        		<snapshots>
+            			<enabled>true</enabled>
+            			<updatePolicy>always</updatePolicy>
+        		</snapshots>
+    		</repository>
+	</repositories>
 	<distributionManagement>
 		<repository>
 			<id>internal.repo</id>
 			<name>Temporary Staging Repository</name>
-			<url>file://${wookler.common.target}</url>
+			<url>file://${wookler.common.target}/</url>
 		</repository>
 	</distributionManagement>
 
@@ -72,7 +82,7 @@
 					<artifactId>maven-deploy-plugin</artifactId>
 					<version>2.8.1</version>
 					<configuration>
-						<altDeploymentRepository>internal.repo::default::file://${wookler.common.target}</altDeploymentRepository>
+						<altDeploymentRepository>internal.repo::default::file://${wookler.common.target}/</altDeploymentRepository>
 					</configuration>
 				</plugin>
 				<!-- This plugin will help us publish the javadocs -->
@@ -125,14 +135,14 @@
 				<version>0.12</version>
 				<configuration>
 					<message>Creating site for ${project.name}-${project.version}</message>
-					<outputDirectory>${wookler.common.target}</outputDirectory> <!-- matches distribution management repository url above -->
+					<outputDirectory>${wookler.common.target}/</outputDirectory> <!-- matches distribution management repository url above -->
 					<noJekyll>true</noJekyll>
 					<includes>
 						<include>**/*</include>
 					</includes>
 					<repositoryName>openriver-maven</repositoryName>
 					<repositoryOwner>subhagho</repositoryOwner>
-					<branch>refs/heads/master</branch>
+					<branch>refs/heads/wookler-repo</branch>
 					<merge>true</merge>
 				</configuration>
 				<executions>

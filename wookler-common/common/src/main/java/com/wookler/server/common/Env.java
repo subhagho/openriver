@@ -17,12 +17,10 @@ import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.wookler.server.common.Monitor.MonitorConfig;
-import com.wookler.server.common.config.CPath;
-import com.wookler.server.common.config.Config;
-import com.wookler.server.common.config.ConfigNode;
-import com.wookler.server.common.config.ConfigParams;
-import com.wookler.server.common.config.ConfigUtils;
+import com.wookler.server.common.config.*;
 import com.wookler.server.common.utils.LogUtils;
 import com.wookler.server.common.utils.NetUtils;
 
@@ -48,22 +46,34 @@ public class Env {
 
     private static final Logger log = LoggerFactory.getLogger(Env.class);
 
-    /** The taskmanager instance. */
+    /**
+     * The taskmanager instance.
+     */
     private TaskManager taskmanager = new TaskManager();
-    /** The configuration object */
+    /**
+     * The configuration object
+     */
     private Config config;
-    /** Module instance */
+    /**
+     * Module instance
+     */
     private Module module;
     /**
      * startup lock -- acquired before calling Env.create() and released after
      * the system startup work is finished
      */
     private SystemStartupLock startupLock = new SystemStartupLock();
-    /** state corresponding to this env */
+    /**
+     * state corresponding to this env
+     */
     protected ObjectState state = new ObjectState();
-    /** env config node */
+    /**
+     * env config node
+     */
     protected ConfigNode envConfig;
-    /** encoding */
+    /**
+     * encoding
+     */
     private Charset encoding = Charset.forName(Constants.DEFAULT_ENCODING);
 
     /**
@@ -94,16 +104,18 @@ public class Env {
     /**
      * Initialize the environment context.
      *
-     * @param configf
-     *            - Configuration file path to load the environment from.
-     * @param configp
-     *            - Root XPath expression to load from.
+     * @param configf - Configuration file path to load the environment from.
+     * @param configp - Root XPath expression to load from.
+     * @param parser  - Instance of the configuration parser to use to read the configuration.
      * @throws Exception
      */
-    protected void init(String configf, String configp) throws Exception {
+    protected void init(String configf, String configp, ConfigParser parser) throws Exception {
+        Preconditions.checkArgument(parser != null);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(configf));
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(configp));
         try {
             config = new Config(configf, configp);
-            config.load();
+            parser.parse(config, configf, configp);
             envConfig = config.search(Constants.CONFIG_PATH_ENV);
 
             if (envConfig != null) {
@@ -141,10 +153,8 @@ public class Env {
      * are used while logging the counters and they uniquely identify an
      * instance.
      *
-     * @param config
-     *            the
-     * @throws Exception
-     *             the exception
+     * @param config the
+     * @throws Exception the exception
      */
     private void setupModule(ConfigNode config) throws Exception {
         module = new Module();
@@ -167,8 +177,7 @@ public class Env {
     /**
      * Setup and create the application monitor
      *
-     * @throws Exception
-     *             the exception
+     * @throws Exception the exception
      */
     private void configMonitor() throws Exception {
         ConfigNode node = ConfigUtils.getConfigNode(config.node(), Monitor.MonitorConfig.class,
@@ -179,8 +188,7 @@ public class Env {
     /**
      * Configure task manager.
      *
-     * @throws Exception
-     *             the exception
+     * @throws Exception the exception
      */
     private void configTaskManager() throws Exception {
         ConfigNode node = ConfigUtils.getConfigNode(config.node(), TaskManager.class,
@@ -194,8 +202,7 @@ public class Env {
      * Get the config path corresponding to the specified type and form the env
      * node to be extracted as env.<path>
      *
-     * @param type
-     *            from which the config path needs to be extracted
+     * @param type from which the config path needs to be extracted
      * @return the path corresponding to the env node to be extracted.
      */
     private String getEnvNode(Class<?> type) {
@@ -271,7 +278,7 @@ public class Env {
         if (startupLock.getState() == EBlockingState.Finished) {
             return null;
         }
-        return startupLock.block(new EBlockingState[] { EBlockingState.Finished });
+        return startupLock.block(new EBlockingState[]{EBlockingState.Finished});
     }
 
     private static Env ENV = new Env();
@@ -280,17 +287,16 @@ public class Env {
      * Initialize the singleton instance of the environment context. This should
      * be done at the beginning of the application create.
      *
-     * @param configf
-     *            - Configuration file path to load the environment from.
-     * @param configp
-     *            - Root XPath expression to load from.
+     * @param configf - Configuration file path to load the environment from.
+     * @param configp - Root XPath expression to load from.
+     * @param parser  - Handle to an instance of the configuration parser.
      * @return - Handle to the singleton instance.
      * @throws Exception
      */
-    public static Env create(String configf, String configp) throws Exception {
+    public static Env create(String configf, String configp, ConfigParser parser) throws Exception {
         synchronized (ENV) {
             if (ENV.state.getState() != EObjectState.Available)
-                ENV.init(configf, configp);
+                ENV.init(configf, configp, parser);
         }
         return ENV;
     }
@@ -312,7 +318,6 @@ public class Env {
     }
 
     /**
-     *
      * IMPORTANT : This function is explicitly provided only for running tests
      * and *SHOULD NOT* be used anywhere in the normal execution flow. It is
      * used to clear the singleton instance, and ensure that a new singleton
@@ -320,9 +325,8 @@ public class Env {
      * responsible for terminating all the threads that are started by this
      * singleton instance. It will reset the existing singleton object to null
      * and create a fresh instance.
-     * 
-     * @see com.wookler.server.common.TaskManager#shutdown()
      *
+     * @see com.wookler.server.common.TaskManager#shutdown()
      */
     public static void reset() {
         Env.get().taskmanager.shutdown();

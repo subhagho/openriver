@@ -17,6 +17,8 @@
 package com.wookler.server.common.config;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.wookler.server.common.ConfigurationException;
 import com.wookler.server.common.EObjectState;
 import com.wookler.server.common.ObjectState;
@@ -35,8 +37,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Container class for a XML parsed configuration object.
@@ -45,17 +46,65 @@ import java.util.Map;
  */
 public class Config {
     public static final class Constants {
-        public static final String NODE_NAME_PROP = "properties";
         public static final String NODE_NAME_INCLUDE = "include";
         public static final String NODE_ATTR_CONFIG_FILE = "file";
         public static final String NODE_ATTR_ROOTNODE = "root";
+    }
+
+    public static final class ConfigProperties extends ConfigIncludedPath {
+        public static final String NODE_NAME_PROP = "properties";
+
+        private Map<String, String> properties = new HashMap<>();
+
+        public ConfigProperties(ConfigNode parent, Config owner) {
+            super(NODE_NAME_PROP, parent, owner);
+        }
+
+        public boolean add(String name, String value, boolean overwrite) {
+            Preconditions.checkArgument(!Strings.isNullOrEmpty(name));
+            if (overwrite) {
+                properties.put(name, value);
+            } else {
+                if (!properties.containsKey(name)) {
+                    properties.put(name, value);
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public boolean add(String name, String value) {
+            return this.add(name, value, true);
+        }
+
+        public String get(String name) {
+            if (properties.containsKey(name)) {
+                return properties.get(name);
+            }
+            return null;
+        }
+
+        public Set<String> getKeys() {
+            return properties.keySet();
+        }
+
+        public boolean isEmpty() {
+            return properties.isEmpty();
+        }
+
+        public boolean contains(String name) {
+            return properties.containsKey(name);
+        }
     }
 
     private String filePath;
     private String configPath;
     private ConfigNode node;
     private ObjectState state = new ObjectState();
-    private HashMap<String, String> properties = new HashMap<>();
+    private ConfigProperties properties = null;
+    private List<ConfigProperties> linkedProperties = null;
+    private List<Config> linkedConfigs = null;
 
     /**
      * Construct the configuration handle with the configuration path specified.
@@ -66,6 +115,18 @@ public class Config {
     public Config(String filePath, String configPath) {
         this.filePath = filePath;
         this.configPath = configPath;
+    }
+
+    public void create(String name) {
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(name));
+        Preconditions.checkState(state.getState() == EObjectState.Unknown);
+        node = new ConfigPath(name, null, this);
+        state.setState(EObjectState.Initializing);
+    }
+
+    public void finalize() {
+        Preconditions.checkArgument(state.getState() == EObjectState.Initializing);
+        state.setState(EObjectState.Available);
     }
 
     /**
@@ -113,27 +174,70 @@ public class Config {
         return null;
     }
 
+    /**
+     * Add a new configuration property.
+     *
+     * @param key   - Property name.
+     * @param value - Property value.
+     * @return - Self
+     */
     public Config property(String key, String value) {
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(value);
 
-        properties.put(key, value);
+        properties.add(key, value);
 
         return this;
     }
 
+    /**
+     * Get the property value for the specified key.
+     *
+     * @param key - Property name.
+     * @return - Value or NULL (if not found)
+     */
     public String property(String key) {
         Preconditions.checkNotNull(key);
-        if (properties.containsKey(key)) {
+        if (properties.contains(key)) {
             return properties.get(key);
+        } else if (linkedProperties != null && !linkedProperties.isEmpty()) {
+            for (ConfigProperties props : linkedProperties) {
+                if (props.contains(key)) {
+                    return props.get(key);
+                }
+            }
         }
         return null;
     }
 
-    public HashMap<String, String> properties() {
-        return properties;
+    /**
+     * Get all the registered property keys.
+     *
+     * @return - Set of property names.
+     */
+    public Set<String> properties() {
+        return properties.getKeys();
     }
 
+    public void linkPropertySet(Config config) {
+        Preconditions.checkArgument(config != null);
+        Preconditions.checkNotNull(config.properties);
+        Preconditions.checkState(!config.properties.isEmpty());
+
+        ConfigProperties props = config.properties;
+        if (linkedProperties == null) {
+            linkedProperties = new ArrayList<>();
+        }
+        linkedProperties.add(props);
+    }
+
+    public void linkConfig(Config config) {
+        Preconditions.checkArgument(config != null);
+        if (linkedConfigs == null) {
+            linkedConfigs = new ArrayList<>();
+        }
+        linkedConfigs.add(config);
+    }
 
     @Override
     public String toString() {
@@ -142,7 +246,7 @@ public class Config {
         if (node != null) {
             if (!properties.isEmpty()) {
                 sb.append("[PROPERTIES:");
-                for (String key : properties.keySet()) {
+                for (String key : properties.getKeys()) {
                     sb.append("{").append(key).append("=")
                             .append(properties.get(key)).append("}");
                 }
@@ -153,6 +257,11 @@ public class Config {
         return sb.toString();
     }
 
+    /**
+     * Get the state of this configuration handle.
+     *
+     * @return - Object state.
+     */
     public EObjectState state() {
         return state.getState();
     }

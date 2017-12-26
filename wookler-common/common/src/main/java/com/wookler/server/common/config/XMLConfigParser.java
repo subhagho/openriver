@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Copyright 2017 Subho Ghosh (subho.ghosh at outlook dot com)
@@ -52,7 +53,6 @@ import java.util.Map;
  */
 public class XMLConfigParser implements ConfigParser {
     public static final class Constants {
-        public static final String CONFIG_NODE_PROPERTIES = "properties";
         public static final String CONFIG_NODE_PARAMS = "params";
         public static final String CONFIG_NODE_PARAM = "param";
         public static final String CONFIG_ATTR_NAME = "name";
@@ -79,8 +79,11 @@ public class XMLConfigParser implements ConfigParser {
         }
     }
 
-    private ConfigPath readConfigFromXML(Config config, ConfigNode parent, Element elm)
+    private ConfigPath readConfigFromXML(Config root, Config config, ConfigNode parent, Element elm)
             throws ConfigurationException {
+        if (root == null)
+            root = config;
+
         if (parent instanceof ConfigPath) {
             // Check if there are any attributes.
             if (elm.hasAttributes()) {
@@ -127,7 +130,7 @@ public class XMLConfigParser implements ConfigParser {
                                 } else {
                                     ConfigPath cp = ((ConfigPath) parent)
                                             .pathnode(e.getNodeName());
-                                    readConfigFromXML(config, cp, e);
+                                    readConfigFromXML(root, config, cp, e);
                                 }
                             }
                         } else if (e.hasAttributes()) {
@@ -151,16 +154,12 @@ public class XMLConfigParser implements ConfigParser {
                                 Config c = new Config(file, rp);
                                 this.parse(c, file, rp);
                                 c.node().move(parent, config);
-                                if (c.properties() != null
-                                        && !c.properties().isEmpty()) {
-                                    for (String key : c.properties().keySet()) {
-                                        config.property(key, c.property(key));
-                                    }
-                                }
+                                config.linkConfig(c);
+                                root.linkPropertySet(c);
                             } else {
                                 ConfigPath cp = ((ConfigPath) parent)
                                         .pathnode(e.getNodeName());
-                                readConfigFromXML(config, cp, e);
+                                readConfigFromXML(root, config, cp, e);
                             }
                         }
                     }
@@ -195,9 +194,11 @@ public class XMLConfigParser implements ConfigParser {
                                 + path + "]");
             }
 
-            ConfigNode node = new ConfigPath(root.getNodeName(), null, config);
-            readConfigFromXML(config, node, root);
+            config.create(root.getNodeName());
+            ConfigNode node = config.node();
+            readConfigFromXML(null, config, node, root);
             ((ConfigPath) node).finalize();
+            config.finalize();
 
         } catch (ParserConfigurationException pse) {
             throw new ConfigurationException(
@@ -215,7 +216,7 @@ public class XMLConfigParser implements ConfigParser {
         }
     }
 
-    private void createConfiguration(Document doc, Element elem, ConfigNode node) throws ConfigurationException {
+    private void createConfiguration(Document doc, Element elem, ConfigNode node, ESaveMode mode) throws ConfigurationException {
         if (node instanceof ConfigPath) {
             ConfigPath cp = (ConfigPath) node;
             Element e = doc.createElement(cp.name());
@@ -223,7 +224,7 @@ public class XMLConfigParser implements ConfigParser {
             if (nodes != null && !nodes.isEmpty()) {
                 for (String nn : nodes.keySet()) {
                     ConfigNode cn = nodes.get(nn);
-                    createConfiguration(doc, e, cn);
+                    createConfiguration(doc, e, cn, mode);
                 }
             }
             elem.appendChild(e);
@@ -238,8 +239,8 @@ public class XMLConfigParser implements ConfigParser {
             ConfigValueList cvl = (ConfigValueList) node;
             List<ConfigNode> nodes = cvl.values();
             if (nodes != null && !nodes.isEmpty()) {
-                for(ConfigNode cn : nodes) {
-                    createConfiguration(doc, elem, cn);
+                for (ConfigNode cn : nodes) {
+                    createConfiguration(doc, elem, cn, mode);
                 }
             }
         } else if (node instanceof ConfigParams) {
@@ -249,7 +250,7 @@ public class XMLConfigParser implements ConfigParser {
                 if (ps != null && !ps.isEmpty()) {
                     Element pes = doc.createElement(Constants.CONFIG_NODE_PARAMS);
 
-                    for(String pk : ps.keySet()) {
+                    for (String pk : ps.keySet()) {
                         String pv = ps.get(pk);
                         Element pe = doc.createElement(Constants.CONFIG_NODE_PARAM);
                         pe.setAttribute(Constants.CONFIG_ATTR_NAME, pk);
@@ -262,7 +263,7 @@ public class XMLConfigParser implements ConfigParser {
         }
     }
 
-    private void writeConfigToXML(Config config, String filename, String path) throws ConfigurationException {
+    private void writeConfigToXML(Config config, String filename, String path, ESaveMode mode) throws ConfigurationException {
         Preconditions.checkArgument(config != null);
         Preconditions.checkArgument(config.state() == EObjectState.Available);
         Preconditions.checkArgument(!Strings.isNullOrEmpty(filename));
@@ -291,18 +292,20 @@ public class XMLConfigParser implements ConfigParser {
             }
             if (elem == null)
                 throw new ConfigurationException("Invalid configuration path specified. [path=" + path + "]");
-            Map<String, String> props = config.properties();
+            Set<String> props = config.properties();
             if (props != null && !props.isEmpty()) {
-                Element pe = doc.createElement(Constants.CONFIG_NODE_PROPERTIES);
-                for(String p : props.keySet()) {
+                Element pe = doc.createElement(Config.ConfigProperties.NODE_NAME_PROP);
+                for (String p : props) {
                     Element ppe = doc.createElement(p);
-                    String v = props.get(p);
-                    ppe.setNodeValue(v);
-                    pe.appendChild(ppe);
+                    String v = config.property(p);
+                    if (!Strings.isNullOrEmpty(v)) {
+                        ppe.setNodeValue(v);
+                        pe.appendChild(ppe);
+                    }
                 }
                 elem.appendChild(pe);
             }
-            createConfiguration(doc, elem, config.node());
+            createConfiguration(doc, elem, config.node(), mode);
 
 
             // write the content into xml file
@@ -332,7 +335,7 @@ public class XMLConfigParser implements ConfigParser {
     }
 
     @Override
-    public void save(Config node, String filename, String path) throws ConfigurationException {
-        writeConfigToXML(node, filename, path);
+    public void save(Config node, String filename, String path, ESaveMode mode) throws ConfigurationException {
+        writeConfigToXML(node, filename, path, mode);
     }
 }

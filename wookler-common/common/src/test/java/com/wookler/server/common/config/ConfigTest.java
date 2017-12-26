@@ -17,10 +17,13 @@
 package com.wookler.server.common.config;
 
 import java.lang.reflect.Field;
+import java.util.UUID;
 
+import com.google.common.base.Preconditions;
 import com.wookler.server.common.utils.ReflectionUtils;
 
 import junit.framework.TestCase;
+import org.junit.Assert;
 
 public class ConfigTest extends TestCase {
 	public static enum ETest {
@@ -102,6 +105,7 @@ public class ConfigTest extends TestCase {
 	private static final String	CONFIG_FILE			= "src/test/resources/test-config.xml";
 	private static final String	CONFIG_ROOT_PATH	= "/configuration/river";
 	private static final String	CONFIG_FILE_AUTO	= "src/test/resources/test-auto-config.xml";
+	private static final String CONFIG_OUTPUT_FILE 	= "/tmp/test-config-save.xml";
 
 	public void testLoad() throws Exception {
 		Config config = new Config(CONFIG_FILE, CONFIG_ROOT_PATH);
@@ -124,4 +128,33 @@ public class ConfigTest extends TestCase {
 			System.out.println("Field:" + f.getName() + ", Value:" + s);
 		}
 	}
+
+	public void testConfigSave() throws Exception {
+        Config config = new Config(CONFIG_FILE, CONFIG_ROOT_PATH);
+        ConfigParser parser = new XMLConfigParser();
+        parser.parse(config, CONFIG_FILE, CONFIG_ROOT_PATH);
+
+        ConfigNode root = config.node();
+        Assert.assertTrue((root instanceof ConfigPath));
+        ConfigPath rp = (ConfigPath) root;
+        ConfigNode np = rp.pathnode("save");
+        Assert.assertNotNull(np);
+        Assert.assertTrue((np instanceof ConfigPath));
+        ConfigPath npath = (ConfigPath) np;
+        ConfigNode cn = npath.valuenode("test-v1", UUID.randomUUID().toString());
+        Assert.assertNotNull(cn);
+        cn = npath.valuenode("test-v2", "Random String");
+        Assert.assertNotNull(cn);
+        cn = npath.valuenode("test-v3", String.valueOf(System.currentTimeMillis()));
+        Assert.assertNotNull(cn);
+        cn = npath.valuenode("test-v4", String.valueOf(false));
+        Assert.assertNotNull(cn);
+
+        ConfigNode tn = npath.pathnode("nested");
+        Assert.assertNotNull(tn);
+        Assert.assertTrue((tn instanceof ConfigPath));
+
+        ConfigPath tp = (ConfigPath) tn;
+
+    }
 }

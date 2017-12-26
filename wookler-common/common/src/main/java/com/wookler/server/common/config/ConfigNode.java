@@ -26,63 +26,59 @@ import com.wookler.server.common.ConfigurationException;
  * Created by subghosh on 15/02/14.
  */
 public interface ConfigNode {
-	/**
-	 * Get the name of this configuration node.
-	 *
-	 * @return - Node name.
-	 */
-	public String name();
+    /**
+     * Get the name of this configuration node.
+     *
+     * @return - Node name.
+     */
+    public String name();
 
-	/**
-	 * Set the name of this configuration node.
-	 *
-	 * @param name
-	 *            - Node name.
-	 * @return - Self.
-	 */
-	public ConfigNode name(String name);
+    /**
+     * Set the name of this configuration node.
+     *
+     * @param name - Node name.
+     * @return - Self.
+     */
+    public ConfigNode name(String name);
 
-	/**
-	 * Is this a leaf (value) node.
-	 *
-	 * @return - Yes/No
-	 */
-	public boolean isLeaf();
+    /**
+     * Is this a leaf (value) node.
+     *
+     * @return - Yes/No
+     */
+    public boolean isLeaf();
 
-	/**
-	 * Get the absolute path (in dot(.) notation) relative to the root node.
-	 *
-	 * @return - Absolute path.
-	 */
-	public String getAbsolutePath();
+    /**
+     * Get the absolute path (in dot(.) notation) relative to the root node.
+     *
+     * @return - Absolute path.
+     */
+    public String getAbsolutePath();
 
-	/**
-	 * Get the relative path of this node, starting this the specified create
-	 * node.
-	 *
-	 * @param start
-	 *            - Node to create the path from.
-	 * @return - Relative path, NULL if create is not an ancestor.
-	 */
-	public String getRelativePath(ConfigNode start);
+    /**
+     * Get the relative path of this node, starting this the specified create
+     * node.
+     *
+     * @param start - Node to create the path from.
+     * @return - Relative path, NULL if create is not an ancestor.
+     */
+    public String getRelativePath(ConfigNode start);
 
-	/**
-	 * Create a copy of this node.
-	 *
-	 * @return - Copy of node.
-	 */
-	public ConfigNode copy();
+    /**
+     * Create a copy of this node.
+     *
+     * @return - Copy of node.
+     */
+    public ConfigNode copy();
 
-	/**
-	 * Move this config node to a new structure.
-	 * 
-	 * @param parent
-	 *            - Target Parent node.
-	 * @param owner
-	 *            - Target config handle.
-	 * @return - Moved config node.
-	 */
-	public ConfigNode move(ConfigNode parent, Config owner)
-			throws ConfigurationException;
+    /**
+     * Move this config node to a new structure.
+     *
+     * @param parent - Target Parent node.
+     * @param owner  - Target config handle.
+     * @return - Moved config node.
+     */
+    public ConfigNode move(ConfigNode parent, Config owner)
+            throws ConfigurationException;
 
 }

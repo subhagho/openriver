@@ -16,6 +16,8 @@
 
 package com.wookler.server.common.config;
 
+import com.wookler.server.common.utils.Utils;
+
 import java.util.HashMap;
 
 /**
@@ -144,5 +146,14 @@ public class ConfigParams extends AbstractConfigNode {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    @Override
+    public boolean equalsTo(ConfigNode node) {
+        if (node instanceof ConfigParams) {
+            ConfigParams cp = (ConfigParams) node;
+            return Utils.mapEquals(params, cp.params);
+        }
+        return false;
     }
 }

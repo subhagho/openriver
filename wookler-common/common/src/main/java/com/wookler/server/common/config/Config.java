@@ -216,7 +216,9 @@ public class Config {
      * @return - Set of property names.
      */
     public Set<String> properties() {
-        return properties.getKeys();
+        if (properties != null)
+            return properties.getKeys();
+        return null;
     }
 
     public void linkPropertySet(Config config) {
@@ -237,6 +239,21 @@ public class Config {
             linkedConfigs = new ArrayList<>();
         }
         linkedConfigs.add(config);
+    }
+
+    public Map<String, String> getAllProperties() {
+        Map<String, String> props = new HashMap<>();
+        if (properties != null && !properties.isEmpty()) {
+            props.putAll(properties.properties);
+        }
+        if (linkedProperties != null && !linkedProperties.isEmpty()) {
+            for (ConfigProperties p : linkedProperties) {
+                if (p != null && !p.isEmpty()) {
+                    props.putAll(p.properties);
+                }
+            }
+        }
+        return props;
     }
 
     @Override

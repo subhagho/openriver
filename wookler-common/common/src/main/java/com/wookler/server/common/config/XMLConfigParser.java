@@ -217,7 +217,12 @@ public class XMLConfigParser implements ConfigParser {
     }
 
     private void createConfiguration(Document doc, Element elem, ConfigNode node, ESaveMode mode) throws ConfigurationException {
-        if (node instanceof ConfigPath) {
+        if (node instanceof ConfigIncludedPath) {
+            ConfigIncludedPath cp = (ConfigIncludedPath) node;
+            String file = cp.getIncludeFilePath();
+            String path = cp.getConfigRoot();
+            save(cp, file, path, mode);
+        } else if (node instanceof ConfigPath) {
             ConfigPath cp = (ConfigPath) node;
             Element e = doc.createElement(cp.name());
             Map<String, ConfigNode> nodes = cp.nodes();
@@ -263,6 +268,87 @@ public class XMLConfigParser implements ConfigParser {
         }
     }
 
+    private void writeConfigToXML(ConfigNode node, String filename, String path, ESaveMode mode) throws ConfigurationException {
+        Preconditions.checkArgument(node != null);
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(filename));
+        Preconditions.checkArgument(!Strings.isNullOrEmpty(path));
+
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilder db = dbf.newDocumentBuilder();
+
+            // root elements
+            Document doc = db.newDocument();
+            String[] pnodes = path.split("/");
+            Element elem = null;
+            for (String pnode : pnodes) {
+                if (Strings.isNullOrEmpty(pnode)) {
+                    continue;
+                }
+                if (elem == null) {
+                    elem = doc.createElement(pnode);
+                    doc.appendChild(elem);
+                } else {
+                    Element e = doc.createElement(pnode);
+                    elem.appendChild(e);
+                    elem = e;
+                }
+            }
+            if (elem == null)
+                throw new ConfigurationException("Invalid configuration path specified. [path=" + path + "]");
+            if (mode != ESaveMode.SAVE_ALL_TO_ROOT) {
+                Set<String> props = config.properties();
+                if (props != null && !props.isEmpty()) {
+                    Element pe = doc.createElement(Config.ConfigProperties.NODE_NAME_PROP);
+                    for (String p : props) {
+                        Element ppe = doc.createElement(p);
+                        String v = config.property(p);
+                        if (!Strings.isNullOrEmpty(v)) {
+                            ppe.setNodeValue(v);
+                            pe.appendChild(ppe);
+                        }
+                    }
+                    elem.appendChild(pe);
+                }
+            } else {
+                Map<String, String> props = config.getAllProperties();
+                if (props != null && !props.isEmpty()) {
+                    Element pe = doc.createElement(Config.ConfigProperties.NODE_NAME_PROP);
+                    for (String p : props.keySet()) {
+                        Element ppe = doc.createElement(p);
+                        String v = config.property(p);
+                        if (!Strings.isNullOrEmpty(v)) {
+                            ppe.setNodeValue(v);
+                            pe.appendChild(ppe);
+                        }
+                    }
+                    elem.appendChild(pe);
+                }
+            }
+            createConfiguration(doc, elem, config.node(), mode);
+
+
+            // write the content into xml file
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(new File(filename));
+
+            transformer.transform(source, result);
+
+            LogUtils.mesg(getClass(), "Written configuration to file. [file=" + filename + "]");
+        } catch (ParserConfigurationException pse) {
+            throw new ConfigurationException(
+                    "Error building the configuration document.", pse);
+        } catch (TransformerConfigurationException pse) {
+            throw new ConfigurationException(
+                    "Error building the configuration document.", pse);
+        } catch (TransformerException pse) {
+            throw new ConfigurationException(
+                    "Error building the configuration document.", pse);
+        }
+    }
+
     private void writeConfigToXML(Config config, String filename, String path, ESaveMode mode) throws ConfigurationException {
         Preconditions.checkArgument(config != null);
         Preconditions.checkArgument(config.state() == EObjectState.Available);
@@ -292,18 +378,34 @@ public class XMLConfigParser implements ConfigParser {
             }
             if (elem == null)
                 throw new ConfigurationException("Invalid configuration path specified. [path=" + path + "]");
-            Set<String> props = config.properties();
-            if (props != null && !props.isEmpty()) {
-                Element pe = doc.createElement(Config.ConfigProperties.NODE_NAME_PROP);
-                for (String p : props) {
-                    Element ppe = doc.createElement(p);
-                    String v = config.property(p);
-                    if (!Strings.isNullOrEmpty(v)) {
-                        ppe.setNodeValue(v);
-                        pe.appendChild(ppe);
+            if (mode != ESaveMode.SAVE_ALL_TO_ROOT) {
+                Set<String> props = config.properties();
+                if (props != null && !props.isEmpty()) {
+                    Element pe = doc.createElement(Config.ConfigProperties.NODE_NAME_PROP);
+                    for (String p : props) {
+                        Element ppe = doc.createElement(p);
+                        String v = config.property(p);
+                        if (!Strings.isNullOrEmpty(v)) {
+                            ppe.setNodeValue(v);
+                            pe.appendChild(ppe);
+                        }
                     }
+                    elem.appendChild(pe);
                 }
-                elem.appendChild(pe);
+            } else {
+                Map<String, String> props = config.getAllProperties();
+                if (props != null && !props.isEmpty()) {
+                    Element pe = doc.createElement(Config.ConfigProperties.NODE_NAME_PROP);
+                    for (String p : props.keySet()) {
+                        Element ppe = doc.createElement(p);
+                        String v = config.property(p);
+                        if (!Strings.isNullOrEmpty(v)) {
+                            ppe.setNodeValue(v);
+                            pe.appendChild(ppe);
+                        }
+                    }
+                    elem.appendChild(pe);
+                }
             }
             createConfiguration(doc, elem, config.node(), mode);
 

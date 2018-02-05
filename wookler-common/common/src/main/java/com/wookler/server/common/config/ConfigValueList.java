@@ -110,7 +110,7 @@ public class ConfigValueList extends AbstractConfigNode {
     @Override
     public ConfigNode copy() {
         ConfigValueList copy = new ConfigValueList(name, parent(), owner);
-        for(ConfigNode n : values) {
+        for (ConfigNode n : values) {
             copy.values.add(n.copy());
         }
         return copy;
@@ -169,14 +169,36 @@ public class ConfigValueList extends AbstractConfigNode {
         sb.append("]");
         return sb.toString();
     }
-    
+
     public void finalize() {
-    	if (values != null && !values.isEmpty()) {
-    		for(ConfigNode v : values) {
-    			if (v instanceof ConfigPath) {
-    				((ConfigPath) v).finalize();
-    			}
-    		}
-    	}
+        if (values != null && !values.isEmpty()) {
+            for (ConfigNode v : values) {
+                if (v instanceof ConfigPath) {
+                    ((ConfigPath) v).finalize();
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean equalsTo(ConfigNode node) {
+        if (node instanceof ConfigValueList) {
+            ConfigValueList cvl = (ConfigValueList) node;
+            for (ConfigNode sn : values) {
+                boolean found = false;
+                for (ConfigNode dn : cvl.values) {
+                    if (sn.equalsTo(dn)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    return false;
+                }
+            }
+        } else {
+            return false;
+        }
+        return true;
     }
 }

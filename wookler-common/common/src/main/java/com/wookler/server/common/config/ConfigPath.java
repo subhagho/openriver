@@ -16,6 +16,7 @@
 
 package com.wookler.server.common.config;
 
+import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 
 import com.wookler.server.common.ConfigurationException;
@@ -37,8 +38,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Constructor with the node name.
      *
-     * @param name
-     *            - Node name.
+     * @param name - Node name.
      */
     public ConfigPath(String name, ConfigNode parent, Config owner) {
         super((AbstractConfigNode) parent, owner);
@@ -48,10 +48,8 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Search for a node in the configuration path.
      *
-     * @param path
-     *            - Split path array.
-     * @param offset
-     *            - Current index offset in the array.
+     * @param path   - Split path array.
+     * @param offset - Current index offset in the array.
      * @return - Configuration node, NULL if not found.
      */
     public ConfigNode search(String[] path, int offset) {
@@ -101,8 +99,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Search for configuration nodes starting with the current node.
      *
-     * @param path
-     *            - Path relative to the current node.
+     * @param path - Path relative to the current node.
      * @return - Configuration node, NULL if not found.
      */
     public ConfigNode search(String path) {
@@ -120,15 +117,13 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Add a new Value node to this path element.
      *
-     * @param name
-     *            - Node name.
-     * @param value
-     *            - Node value.
+     * @param name  - Node name.
+     * @param value - Node value.
      * @return the {@link ConfigValue} node corresponding to the newly added
-     *         value
+     * value
      */
     public ConfigNode valuenode(String name, String value) {
-        if (this.name.compareTo(Config.Constants.NODE_NAME_PROP) == 0) {
+        if (this.name.compareTo(Config.ConfigProperties.NODE_NAME_PROP) == 0) {
             owner.property(name, value);
             return null;
         }
@@ -153,8 +148,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Add a new Value node to this path element.
      *
-     * @param cv
-     *            the {@link ConfigValue} to be added
+     * @param cv the {@link ConfigValue} to be added
      * @return the added {@link ConfigValue} node
      */
     public ConfigNode valuenode(ConfigValue cv) {
@@ -178,8 +172,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Add a list of Value nodes to this path element.
      *
-     * @param cv
-     *            the {@link ConfigValueList} containing the Values to be added
+     * @param cv the {@link ConfigValueList} containing the Values to be added
      * @return the added {@link ConfigValueList} node
      */
     public ConfigNode valuelist(ConfigValueList cv) {
@@ -209,8 +202,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Add a new Path node specified by name to this path element
      *
-     * @param name
-     *            - Node name.
+     * @param name - Node name.
      * @return - Config Path node.
      */
     public ConfigPath pathnode(String name) {
@@ -240,8 +232,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Add a new Path node specified by ConfigPath to this path element.
      *
-     * @param cp
-     *            the {@link ConfigPath} node to be added
+     * @param cp the {@link ConfigPath} node to be added
      * @return the {@link ConfigPath} node that is being added
      */
     public ConfigPath pathnode(ConfigPath cp) {
@@ -268,8 +259,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Add configuration path attributes to the current path element.
      *
-     * @param attributes
-     *            - Config Attributes.
+     * @param attributes - Config Attributes.
      * @return - self
      */
     public ConfigPath attributes(ConfigAttributes attributes) {
@@ -309,11 +299,9 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * TODO ??
      *
-     * @param node
-     *            the node to be added as child
+     * @param node the node to be added as child
      * @return the config node TODO
-     * @throws ConfigurationException
-     *             the configuration exception
+     * @throws ConfigurationException the configuration exception
      */
     public ConfigNode addChild(ConfigNode node) throws ConfigurationException {
         ConfigNode nn = null;
@@ -371,8 +359,7 @@ public class ConfigPath extends AbstractConfigNode {
     /**
      * Set the name of this configuration node.
      *
-     * @param name
-     *            - Node name.
+     * @param name - Node name.
      * @return - Self.
      */
     @Override
@@ -436,12 +423,14 @@ public class ConfigPath extends AbstractConfigNode {
         return b.toString();
     }
 
+    public boolean hasProperties() {
+
+        return false;
+    }
+
     @Override
     protected void finalize() {
         if (nodes != null && !nodes.isEmpty()) {
-            if (nodes.containsKey(Config.Constants.NODE_NAME_PROP)) {
-                nodes.remove(Config.Constants.NODE_NAME_PROP);
-            }
             for (String key : nodes.keySet()) {
                 ConfigNode n = nodes.get(key);
                 if (n instanceof ConfigPath) {
@@ -451,5 +440,28 @@ public class ConfigPath extends AbstractConfigNode {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean equalsTo(ConfigNode node) {
+        if (node instanceof ConfigPath) {
+            ConfigPath cp = (ConfigPath) node;
+            if (cp.nodes.size() != nodes.size()) {
+                return false;
+            }
+            for (String nn : nodes.keySet()) {
+                if (!nodes.containsKey(nn)) {
+                    return false;
+                }
+                ConfigNode cns = nodes.get(nn);
+                ConfigNode cnd = cp.nodes.get(nn);
+                Preconditions.checkNotNull(cns);
+                Preconditions.checkNotNull(cnd);
+                if (!cns.equalsTo(cnd)) {
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 }

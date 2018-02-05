@@ -81,4 +81,11 @@ public interface ConfigNode {
     public ConfigNode move(ConfigNode parent, Config owner)
             throws ConfigurationException;
 
+    /**
+     * Compare the passed configuration node to check for equality.
+     *
+     * @param node - Target node.
+     * @return - Is equal?
+     */
+    public boolean equalsTo(ConfigNode node);
 }
